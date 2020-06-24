@@ -1,5 +1,6 @@
 import sys
 import csv
+import bz2
 import json
 from collections import defaultdict
 
@@ -10,7 +11,7 @@ in_file, out_path = sys.argv[1], sys.argv[2]
 flair_count = 0
 user_flairs = defaultdict(lambda: defaultdict(set))
 
-with open(in_file) as f:
+with bz2.open(in_file) as f:
     for count, line in enumerate(f):
         submission = json.loads(f.readline())
         username, flair, subreddit = submission['author'], submission['author_flair_text'], submission['subreddit']
