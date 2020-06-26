@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     # Parse the file name from the full path and switch the extension to .tsv
     file_name = in_file_path.split('/')[-1]
-    out = file_name.split('.')[0] + '.tsv'
+    out = out_dir + file_name.split('.')[0] + '.tsv'
 
     print("Writing output for file {} to {}".format(in_file_path, out))
     output_to_tsv(out, flair_data)
