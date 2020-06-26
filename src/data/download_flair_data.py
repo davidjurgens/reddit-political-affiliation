@@ -4,6 +4,7 @@ import bz2
 import lzma
 import json
 from collections import defaultdict
+from json import JSONDecodeError
 
 """  Script to parse out user flair information from Reddit comments and posts """
 
@@ -26,12 +27,16 @@ def parse_submissions(file_handle):
     user_flairs = defaultdict(lambda: defaultdict(set))
 
     for count, line in enumerate(file_handle):
-        submission = json.loads(f.readline())
-        username, flair, subreddit = submission['author'], submission['author_flair_text'], submission['subreddit']
+        try:
+            submission = json.loads(f.readline())
+            username, flair, subreddit = submission['author'], submission['author_flair_text'], submission['subreddit']
 
-        if flair:
-            user_flairs[username][subreddit].add(flair)
-            flair_count += 1
+            if flair:
+                user_flairs[username][subreddit].add(flair)
+                flair_count += 1
+
+        except JSONDecodeError:
+            print("Failed to parse line: {}".format(line))
 
         if count % 1000000 == 0 and count > 0:
             print("Completed %d lines for file %s" % (count, file_handle))
