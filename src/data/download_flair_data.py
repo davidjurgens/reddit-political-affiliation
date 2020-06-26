@@ -33,7 +33,7 @@ def parse_submissions(file_handle):
             user_flairs[username][subreddit].add(flair)
             flair_count += 1
 
-        if count % 1000000 == 0:
+        if count % 1000000 == 0 and count > 0:
             print("Completed %d lines for file %s" % (count, file_handle))
 
     flair_percent = flair_count / float(count)
