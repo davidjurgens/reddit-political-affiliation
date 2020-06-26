@@ -60,7 +60,9 @@ if __name__ == '__main__':
     print("Percentage of users with a flair {} for file {}".format(flair_percent, in_file_path))
     print("Number of unique users for file {} is {}".format(in_file_path, len(list(flair_data.keys()))))
 
-    file_name = in_file_path.split('.')[0]
-    out = out_dir + file_name + ".tsv"
+    # Parse the file name from the full path and switch the extension to .tsv
+    file_name = in_file_path.split('/')[-1]
+    out = file_name.split('.')[0] + '.tsv'
+
     print("Writing output for file {} to {}".format(in_file_path, out))
     output_to_tsv(out, flair_data)
