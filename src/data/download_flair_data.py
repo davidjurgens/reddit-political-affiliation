@@ -6,7 +6,11 @@ import json
 from collections import defaultdict
 from json import JSONDecodeError
 
-"""  Script to parse out user flair information from Reddit comments and posts """
+"""  Script to parse out user flair information from Reddit comments and posts 
+     
+     Sample row of data
+        - username: {subreddit1: [falir1, flair2], subreddit2: [flair3]}
+"""
 
 
 def get_file_handle(file_path):
@@ -20,26 +24,25 @@ def get_file_handle(file_path):
     raise AssertionError("Invalid extension for " + file_path + ". Expecting bz2 or xz file")
 
 
-def parse_submissions(file_handle):
+def parse_submissions(file_name, file_pointer):
     """ Return a users subreddits with their associated flair(s) """
 
     flair_count = 0
-    user_flairs = defaultdict(lambda: defaultdict(set))
-
-    for count, line in enumerate(file_handle):
+    user_flairs = defaultdict(lambda: defaultdict(list))
+    for count, line in enumerate(file_pointer):
         try:
-            submission = json.loads(f.readline())
+            submission = json.loads(f.readline().strip())
             username, flair, subreddit = submission['author'], submission['author_flair_text'], submission['subreddit']
 
-            if flair:
-                user_flairs[username][subreddit].add(flair)
+            if flair and flair not in user_flairs[username][subreddit]:
+                user_flairs[username][subreddit].append(flair)
                 flair_count += 1
 
-        except JSONDecodeError:
-            print("Failed to parse line: {}".format(line))
+        except (JSONDecodeError, AttributeError) as e:
+            print("Failed to parse line: {} with error: {}".format(line, e))
 
         if count % 1000000 == 0 and count > 0:
-            print("Completed %d lines for file %s" % (count, file_handle))
+            print("Completed %d lines for file %s" % (count, file_name))
 
     flair_percent = flair_count / float(count)
     return user_flairs, flair_percent
@@ -59,7 +62,7 @@ if __name__ == '__main__':
 
     print("Starting parse of file {}".format(in_file_path))
     f = get_file_handle(in_file_path)
-    flair_data, flair_percent = parse_submissions(f)
+    flair_data, flair_percent = parse_submissions(in_file_path, f)
     f.close()
 
     print("Percentage of users with a flair {} for file {}".format(flair_percent, in_file_path))
