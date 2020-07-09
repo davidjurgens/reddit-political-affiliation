@@ -1,6 +1,7 @@
 import csv
 import glob
 import random
+import pickle
 
 import networkx as nx
 from tqdm.notebook import tqdm
@@ -69,11 +70,19 @@ def output_to_tsv(fname, ppr_result):
     print("{} successfully completed".format(fname))
 
 
+def load_existing_graph(input_path):
+    print("Loading in graph from {}".format(input_path))
+    with open(input_path, 'rb') as handle:
+        g = pickle.load(handle)
+        return g
+
+
 if __name__ == '__main__':
 
     sample_size = 500
-    network_dir = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/2015*.tsv'
-    g = build_bipartite_graph(network_dir)
+    # network_dir = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/2015*.tsv'
+    # g = build_bipartite_graph(network_dir)
+    g = load_existing_graph('/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/2015_graph.pickle')
     out_directory = '/shared/0/projects/reddit-political-affiliation/data/ppr-scores/'
 
     for result in compute_ppr_random_sample(g, sample_size, repeat=3):
