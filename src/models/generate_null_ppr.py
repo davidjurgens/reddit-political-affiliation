@@ -49,7 +49,7 @@ def get_representation(g, sample):
         if n in sample:
             personalization[n] = 1
         else:
-            personalization[n] = 0
+            personalization[n] = 0.00001
     return personalization
 
 
