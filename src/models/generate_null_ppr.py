@@ -85,7 +85,7 @@ if __name__ == '__main__':
     g = load_existing_graph('/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/2018_graph.pickle')
     out_directory = '/shared/0/projects/reddit-political-affiliation/data/ppr-scores/'
 
-    for result in compute_ppr_random_sample(g, sample_size, repeat=3):
+    for result in compute_ppr_random_sample(g, sample_size, repeat=15):
         # Generate a random 'id' for the file. Just need a way to save under different names
         fid = random.randrange(1, 10 ** 6)
         fname = out_directory + "2018_" + str(fid) + '.tsv'
