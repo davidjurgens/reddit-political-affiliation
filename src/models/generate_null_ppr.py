@@ -79,15 +79,15 @@ def load_existing_graph(input_path):
 
 if __name__ == '__main__':
 
-    sample_size = 500
+    sample_size = 4000
     # network_dir = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/2015*.tsv'
     # g = build_bipartite_graph(network_dir)
-    g = load_existing_graph('/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/2015_graph.pickle')
+    g = load_existing_graph('/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/2018_graph.pickle')
     out_directory = '/shared/0/projects/reddit-political-affiliation/data/ppr-scores/'
 
     for result in compute_ppr_random_sample(g, sample_size, repeat=3):
         # Generate a random 'id' for the file. Just need a way to save under different names
         fid = random.randrange(1, 10 ** 6)
-        fname = out_directory + "2015_" + str(fid) + '.tsv'
+        fname = out_directory + "2018_" + str(fid) + '.tsv'
         print("{} is complete".format(fname))
         output_to_tsv(fname, result)
