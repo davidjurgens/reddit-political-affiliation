@@ -33,6 +33,7 @@ def extract_bipartite_network(month_to_files, out_dir):
         mfiles = month_to_files[month]
         user_to_subreddit_counts = defaultdict(Counter)
         for fname in tqdm(mfiles):
+            print(fname)
             if fname.endswith('.zst'):
                 user_to_subreddit_counts = extract_zst_data(fname, user_to_subreddit_counts)
             else:
@@ -93,3 +94,7 @@ if __name__ == '__main__':
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.bz2'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
+
+    out_directory = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/'
+    m_files = get_month_to_files(files)
+    extract_bipartite_network(m_files, out_directory)
