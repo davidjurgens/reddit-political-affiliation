@@ -6,7 +6,7 @@ import random
 from collections import Counter
 
 import networkx as nx
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 
 def build_bipartite_graph(directory, min_sub_threshold=500):

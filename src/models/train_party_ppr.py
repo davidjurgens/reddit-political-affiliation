@@ -6,7 +6,7 @@ from collections import *
 from collections import Counter
 
 import networkx as nx
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 
 def load_user_flair_labels(directory):
