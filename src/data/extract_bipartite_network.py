@@ -67,22 +67,23 @@ def extract_compressed_data(fname, user_to_subreddit_counts):
 
 
 def extract_zst_data(fname, user_to_subreddit_counts):
-    dctx = zstd.ZstdDecompressor()
-    with dctx.stream_reader(fname) as reader:
-        while True:
-            chunk = reader.read(131072)
-            if not chunk:
-                break
+    with open(fname, 'rb') as f:
+        dctx = zstd.ZstdDecompressor()
+        with dctx.stream_reader(f) as reader:
+            while True:
+                chunk = reader.read(131072)
+                if not chunk:
+                    break
 
-            string_data = chunk.decode('utf-8')
-            lines = string_data.split("\n")
-            for i, line in enumerate(lines[:-1]):
-                try:
-                    action = json.loads(line)
-                    subreddit, user = action['subreddit'], action['author']
-                    user_to_subreddit_counts[user][subreddit] += 1
-                except Exception:
-                    pass
+                string_data = chunk.decode('utf-8')
+                lines = string_data.split("\n")
+                for i, line in enumerate(lines[:-1]):
+                    try:
+                        action = json.loads(line)
+                        subreddit, user = action['subreddit'], action['author']
+                        user_to_subreddit_counts[user][subreddit] += 1
+                    except Exception:
+                        pass
 
     return user_to_subreddit_counts
 
