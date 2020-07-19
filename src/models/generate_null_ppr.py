@@ -118,6 +118,7 @@ if __name__ == '__main__':
         g = load_existing_graph(args.g)
     else:
         directory = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + args.year + '*.tsv'
+        g = build_bipartite_graph(directory)
 
     out_directory = '/shared/0/projects/reddit-political-affiliation/data/ppr-scores/'
 

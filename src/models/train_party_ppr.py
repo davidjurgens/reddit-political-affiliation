@@ -96,7 +96,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train personalized page rank by party')
     parser.add_argument('g', help='Path to existing graph', type=str)
     parser.add_argument('o', help='Output path to store trained page rank models', type=str)
-    parser.add_argument("y", help="Year of data", type=int)
+    parser.add_argument('y', help="Year of data", type=int)
     args = parser.parse_args()
 
     g = load_existing_graph(args.g)
