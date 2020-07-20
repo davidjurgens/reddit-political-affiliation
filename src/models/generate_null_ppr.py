@@ -6,7 +6,7 @@ import random
 from collections import Counter
 
 import networkx as nx
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 
 def build_bipartite_graph(directory, min_sub_threshold=500):
@@ -118,7 +118,6 @@ if __name__ == '__main__':
         g = load_existing_graph(args.g)
     else:
         directory = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + args.year + '*.tsv'
-        g = build_bipartite_graph(directory)
 
     out_directory = '/shared/0/projects/reddit-political-affiliation/data/ppr-scores/'
 

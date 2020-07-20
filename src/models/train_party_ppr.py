@@ -6,7 +6,7 @@ from collections import *
 from collections import Counter
 
 import networkx as nx
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 
 def load_user_flair_labels(directory):
@@ -73,12 +73,12 @@ def train_party_ppr(g, user_to_politics, out_directory, year):
 
     rep_ppr = nx.pagerank(g, personalization=rep_personalization)
 
-    with open(out_directory + str(year) + "_rep_ppr.pickle", 'wb') as handle:
+    with open(out_directory + year + "_rep_ppr.pickle", 'wb') as handle:
         pickle.dump(rep_ppr, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     dem_ppr = nx.pagerank(g, personalization=dem_personalization)
 
-    with open(out_directory + str(year) + "_dem_ppr.pickle", 'wb') as handle:
+    with open(out_directory + year + "_dem_ppr.pickle", 'wb') as handle:
         pickle.dump(dem_ppr, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
