@@ -72,14 +72,16 @@ def train_party_ppr(g, user_to_politics, out_directory, year):
     dem_personalization = get_personalization(g, dem_users)
 
     rep_ppr = nx.pagerank(g, personalization=rep_personalization)
-
+    print("Completed rep pagerank. Saving to file: " + out_directory + str(year) + "_rep_ppr.pickle")
     with open(out_directory + str(year) + "_rep_ppr.pickle", 'wb') as handle:
         pickle.dump(rep_ppr, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     dem_ppr = nx.pagerank(g, personalization=dem_personalization)
-
+    print("Completed dem pagerank. Saving to file: " + out_directory + str(year) + "_dem_ppr.pickle")
     with open(out_directory + str(year) + "_dem_ppr.pickle", 'wb') as handle:
         pickle.dump(dem_ppr, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print("Training complete for both parties")
 
 
 def load_existing_graph(input_path):
