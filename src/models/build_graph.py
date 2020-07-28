@@ -61,7 +61,7 @@ def filter_subreddit_and_users(files, super_user_cutoff=10000):
     return list(user_subreddits.keys()), top_subreddits
 
 
-def build_graph(files, filtered_users, filtered_subreddits):
+def build_graph(files):
     g = nx.Graph()
 
     for fname in tqdm(files, desc='Processing all files'):
@@ -72,29 +72,25 @@ def build_graph(files, filtered_users, filtered_subreddits):
             user, subreddit, freq = line[:-1].split('\t')
             freq = int(freq)
 
-            # distinguish users from subreddits
-            subreddit = 'r/' + subreddit
+            if not g.has_node(f):
+                g.add_node(user)
+            if not g.has_node(subreddit):
+                g.add_node(subreddit)
 
-            if subreddit in filtered_subreddits and user in filtered_users:
-                if not g.has_node(f):
-                    g.add_node(user)
-                if not g.has_node(subreddit):
-                    g.add_node(subreddit)
-
-                if g.has_edge(user, subreddit):
-                    g[user][subreddit]['weight'] += freq
-                else:
-                    g.add_edge(user, subreddit, weight=freq)
+            if g.has_edge(user, subreddit):
+                g[user][subreddit]['weight'] += freq
+            else:
+                g.add_edge(user, subreddit, weight=freq)
     return g
 
 
 if __name__ == '__main__':
     year = '2018'
-    directory = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year + '*.tsv'
+    directory = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year + '*_filtered.tsv'
     files = glob.glob(directory)
 
-    users, subreddits = filter_subreddit_and_users(files)
-    g = build_graph(files, users, subreddits)
+    # users, subreddits = filter_subreddit_and_users(files)
+    g = build_graph(files)
 
     # Dump for later use
     out_dir = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/'
