@@ -8,9 +8,10 @@ params = {'batch_size': batch_size,
           'num_workers': 6}
 EPOCHS = 15
 year = '2018'
-month = '5'  # When training one month at a time
+month = '05'
 
-network_directory = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year + '*_filtered.tsv'
+network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year + '-' + month + \
+               '_filtered.tsv'
 flair_directory = "/shared/0/projects/reddit-political-affiliation/data/flair-affiliations/20*.tsv"
 out_dir = "/shared/0/projects/reddit-political-affiliation/data/word2vec/" + year + "-" + month + "/"
 

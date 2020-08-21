@@ -8,9 +8,8 @@ from tqdm import tqdm
 from src.data.SubredditUserDataset import SubredditUserDataset
 
 
-def build_dataset(network_directory, flair_directory, validation_split=0.1, months=-1):
-    network_files = glob.glob(network_directory)[:months]
-    user_subreddits, vocab, all_subreddits = build_user_to_subreddits(network_files)
+def build_dataset(network_path, flair_directory, validation_split=0.1):
+    user_subreddits, vocab, all_subreddits = build_user_to_subreddits(network_path)
     flair_files = glob.glob(flair_directory)
     user_to_politics = read_political_affiliations(flair_files)
     training_dataset = SubredditUserDataset(user_subreddits, all_subreddits, user_to_politics)
@@ -25,22 +24,20 @@ def build_dataset(network_directory, flair_directory, validation_split=0.1, mont
     return training_dataset, training, validation, vocab
 
 
-def build_user_to_subreddits(files):
+def build_user_to_subreddits(bipartite_network):
     vocab = set()
     user_subreddits = defaultdict(set)
     all_subreddits = set()
 
-    for fname in tqdm(files, desc="Processing all files"):
-        print(fname)
-        with open(fname, 'rt') as f:
-            lines = f.readlines()
+    with open(bipartite_network, 'rt') as f:
+        lines = f.readlines()
 
-        for line in tqdm(lines, position=1, desc='Building vocab from file'):
-            user, subreddit, freq = line[:-1].split('\t')
-            vocab.add(user)
-            vocab.add(subreddit)
-            user_subreddits[user].add(subreddit)
-            all_subreddits.add(subreddit)
+    for line in tqdm(lines, position=1, desc='Building vocab from file'):
+        user, subreddit, freq = line[:-1].split('\t')
+        vocab.add(user)
+        vocab.add(subreddit)
+        user_subreddits[user].add(subreddit)
+        all_subreddits.add(subreddit)
 
     all_subreddits = list(all_subreddits)
     print("Length of vocab: " + str(len(vocab)))
