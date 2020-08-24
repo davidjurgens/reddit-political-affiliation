@@ -85,7 +85,7 @@ def build_graph(files):
 
 
 if __name__ == '__main__':
-    year = '2018'
+    year = '2017'
     directory = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year + '*_filtered.tsv'
     files = glob.glob(directory)
 

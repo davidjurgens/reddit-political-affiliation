@@ -19,7 +19,7 @@ class User2Subreddit(nn.Module):
         self.v_embeddings.weight.data.uniform_(-init_range, init_range)
         self.political_layer.weight.data.uniform_(-init_range, init_range)
 
-    def forward(self, user_id, subreddit_id, political_user_ids, subredditlabels):
+    def forward(self, user_id, subreddit_id, political_user_ids):
         emb_u = self.u_embeddings(user_id)
         emb_v = self.v_embeddings(subreddit_id)
 
@@ -36,4 +36,4 @@ class User2Subreddit(nn.Module):
         else:
             political_predictions = None
 
-        return score, political_predictions, subredditlabels
+        return score, political_predictions
