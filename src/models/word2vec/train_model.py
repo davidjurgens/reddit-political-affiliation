@@ -1,3 +1,5 @@
+import random
+
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -6,12 +8,12 @@ from tqdm import tqdm
 
 from src.data.make_dataset import build_dataset
 from src.models.word2vec.User2Subreddit import User2Subreddit
-from src.models.word2vec.predict_model import output_top_n_similar, predict_user_affiliations
+from src.models.word2vec.predict_model import predict_user_affiliations, output_top_n_similar
 from src.models.word2vec.train_settings import *
 
 torch.manual_seed(42)
 
-training_dataset, training, validation, vocab = build_dataset(network_path, flair_directory)
+dataset, training, validation, pol_validation, vocab = build_dataset(network_path, flair_directory)
 word_to_ix = {word: i for i, word in enumerate(vocab)}
 all_subreddits = {v for v in vocab if v[:2] == 'r/' and v[2:4] != 'u_'}
 print("# of subreddits: " + str(len(all_subreddits)))
@@ -21,13 +23,13 @@ train_loader = DataLoader(training, **params)
 validation_loader = DataLoader(validation, **params)
 iter_length = len(training) / batch_size
 
-model = User2Subreddit(training_dataset.num_users(), embedding_dim, training_dataset.num_subreddits())
+model = User2Subreddit(dataset.num_users(), embedding_dim, dataset.num_subreddits())
 model.to(device)
 optimizer = optim.AdamW(model.parameters(), lr=0.0001)
 loss_function = nn.BCELoss()
 
 
-def training_iteration(epoch, i, model, data, loss, pol_loss):
+def training_iteration(epoch, i, model, data, pol_loss):
     optimizer.zero_grad()
 
     user_sub, politics_labels, subreddit_labels = data
@@ -62,13 +64,13 @@ def training_iteration(epoch, i, model, data, loss, pol_loss):
     return model, loss, pol_loss
 
 
-def validation_iteration(epoch, i, model, sample_size):
+def validation_iteration(epoch, model, sample_size):
     # Select a random sample from the validation data
     sample, _ = random_split(validation, [sample_size, len(validation) - sample_size])
 
     model.train(False)
     for i, sample_data in enumerate(DataLoader(sample, batch_size=sample_size)):
-        _, val_loss, val_pol_loss = training_iteration(epoch, i, model, sample_data, loss=0, pol_loss=0)
+        _, val_loss, val_pol_loss = training_iteration(epoch, i, model, sample_data, pol_loss=0)
 
         writer.add_scalar('validation word2vec loss', val_loss.cpu().detach().numpy().item(),
                           i * batch_size + epoch * len(training))
@@ -77,14 +79,44 @@ def validation_iteration(epoch, i, model, sample_size):
                               i * batch_size + epoch * len(training))
 
 
+def pol_validation_iteration(model, sample_size, step):
+    # Select a random sample from the political validation data
+    validation_list = list(pol_validation.items())
+    sample = dict(random.sample(validation_list, sample_size))
+
+    # Build a dataset of the users in the validation set
+    user_ids, pol_labels = [], []
+
+    for user, pol_label in sample.items():
+        try:
+            # User subreddit dataset spans 1 month. Political data spans the year. Some users might not be present
+            user_ids.append(dataset.user_to_idx[user])
+            pol_labels.append(pol_label)
+        except KeyError:
+            pass
+
+    user_ids = torch.LongTensor(user_ids).to(device)
+    pol_labels = torch.FloatTensor(pol_labels).to(device)
+
+    emb_p = model.u_embeddings(user_ids)
+    political_predictions = model.political_layer(emb_p)
+    political_predictions = torch.sigmoid(political_predictions)
+
+    # Predict the political affiliations and compute the loss
+    pol_loss = loss_function(political_predictions.squeeze(), pol_labels)
+    print("Validation political loss at step {}: ".format(step, pol_loss))
+    writer.add_scalar('validation political loss', pol_loss.cpu().detach().numpy().item(), step)
+
+
 if __name__ == '__main__':
 
     sample_subreddits = ['r/nba', '/r/CryptoCurrency', 'r/Conservative']
 
     for epoch in tqdm(range(EPOCHS), desc='Epoch'):
-        loss, p_loss = 0, 0
+        p_loss = 0
         for i, data in enumerate(tqdm(train_loader, total=iter_length)):
-            model, loss, p_loss = training_iteration(epoch, i, model, data, loss, p_loss)
+            step = i * batch_size + epoch * len(training)
+            model, loss, p_loss = training_iteration(epoch, i, model, data, p_loss)
 
             writer.add_scalar('word2vec loss', loss.cpu().detach().numpy().item(),
                               i * batch_size + epoch * len(training))
@@ -94,7 +126,8 @@ if __name__ == '__main__':
 
             # Every 10 percent output the validation loss along with sanity checks
             if (i / iter_length) % 0.1 == 0:
-                validation_iteration(epoch, i, model, sample_size=10000)
+                pol_validation_iteration(model, sample_size=100, step=step)
+                validation_iteration(epoch, model, sample_size=10000)
                 [output_top_n_similar(model, sub, all_subreddits, word_to_ix, n=10) for sub in sample_subreddits]
 
         # Save the model after every epoch
@@ -103,4 +136,4 @@ if __name__ == '__main__':
     writer.close()
 
     # When the model is done training predict all user affiliations
-    predict_user_affiliations(model, training_dataset, out_dir=out_dir)
+    predict_user_affiliations(model, dataset, out_dir=out_dir)

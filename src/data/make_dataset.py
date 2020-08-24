@@ -1,4 +1,5 @@
 import glob
+import random
 from collections import defaultdict, Counter
 
 import torch
@@ -12,16 +13,22 @@ def build_dataset(network_path, flair_directory, validation_split=0.1):
     user_subreddits, vocab, all_subreddits = build_user_to_subreddits(network_path)
     flair_files = glob.glob(flair_directory)
     user_to_politics = read_political_affiliations(flair_files)
-    training_dataset = SubredditUserDataset(user_subreddits, all_subreddits, user_to_politics)
 
-    validation_size = int(validation_split * len(training_dataset))
-    train_size = len(training_dataset) - validation_size
+    # Create validation dataset for political flairs
+    pol_validation, pol_training = dict_random_split(user_to_politics, split_size=validation_split)
+    print("User to politics training size: {}: " + str(len(pol_training)))
+    print("User to politics validation size: {}: " + str(len(pol_validation)))
+
+    # Create validation data for training data
+    dataset = SubredditUserDataset(user_subreddits, all_subreddits, user_to_politics=pol_training)
+    validation_size = int(validation_split * len(dataset))
+    train_size = len(dataset) - validation_size
 
     # Fix the seed size for reproducibility
     torch.manual_seed(42)
-    training, validation = random_split(training_dataset, [train_size, validation_size])
+    training, validation = random_split(dataset, [train_size, validation_size])
     print("Train size: {} Validation size: {}".format(train_size, validation_size))
-    return training_dataset, training, validation, vocab
+    return dataset, training, validation, pol_validation, vocab
 
 
 def build_user_to_subreddits(bipartite_network):
@@ -77,3 +84,16 @@ def convert_affiliations_to_binary(user_to_politics):
             user_to_politics[user] = 1
 
     return user_to_politics
+
+
+def dict_random_split(d, split_size):
+    # Convert into a list and shuffle
+    item_list = list(d.items())
+    random.seed(42)
+    random.shuffle(item_list)
+
+    # Split the list
+    split = int(len(item_list) * split_size)
+    split_a, split_b = item_list[:split], item_list[split:]
+
+    return dict(split_a), dict(split_b)
