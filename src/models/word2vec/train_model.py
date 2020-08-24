@@ -9,6 +9,8 @@ from src.models.word2vec.User2Subreddit import User2Subreddit
 from src.models.word2vec.predict_model import output_top_n_similar, predict_user_affiliations
 from src.models.word2vec.train_settings import *
 
+torch.manual_seed(42)
+
 training_dataset, training, validation, vocab = build_dataset(network_path, flair_directory)
 word_to_ix = {word: i for i, word in enumerate(vocab)}
 all_subreddits = {v for v in vocab if v[:2] == 'r/' and v[2:4] != 'u_'}
