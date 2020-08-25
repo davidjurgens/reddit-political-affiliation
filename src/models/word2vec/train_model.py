@@ -6,6 +6,9 @@ from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from tqdm import tqdm
 
+import sys
+sys.path.append('../..') # make it work in the root directory
+
 from src.data.make_dataset import build_dataset
 from src.models.word2vec.User2Subreddit import User2Subreddit
 from src.models.word2vec.predict_model import predict_user_affiliations, output_top_n_similar
@@ -80,6 +83,10 @@ def validation_iteration(epoch, model, sample_size):
 
 
 def pol_validation_iteration(model, sample_size, step):
+
+    # Switch to evaluation model
+    model.eval()
+    
     # Select a random sample from the political validation data
     validation_list = list(pol_validation.items())
     sample = dict(random.sample(validation_list, sample_size))
@@ -107,6 +114,8 @@ def pol_validation_iteration(model, sample_size, step):
     print("Validation political loss at step {}: ".format(step, pol_loss))
     writer.add_scalar('validation political loss', pol_loss.cpu().detach().numpy().item(), step)
 
+    # After evaluation, turn training back on
+    model.train()
 
 if __name__ == '__main__':
 
@@ -125,7 +134,7 @@ if __name__ == '__main__':
                 print(' loss at step %d: %f' % (i, loss.cpu().detach().numpy()))
 
             # Every 10 percent output the validation loss along with sanity checks
-            if (i / iter_length) % 0.1 == 0:
+            if i % int(iter_length/10) == 0:
                 pol_validation_iteration(model, sample_size=100, step=step)
                 validation_iteration(epoch, model, sample_size=10000)
                 [output_top_n_similar(model, sub, all_subreddits, word_to_ix, n=10) for sub in sample_subreddits]
