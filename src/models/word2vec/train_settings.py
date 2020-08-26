@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser(description='Train User2Subreddit word2vec mode
 parser.add_argument('--network', type=str, help="Location of the bipartite network file between users and subreddits")
 parser.add_argument('--flairs', type=str, help="Location of the user flair affiliations")
 parser.add_argument('--num_epochs', type=int, help="The number of epochs to run", default=10)
+parser.add_argument('--batch_size', type=int, help="The batch size", default=512)
 parser.add_argument('--out', type=str, help="Output directory")
 parser.add_argument('--device', type=str, help="The GPU to run on (e.g., cuda:0)")
 parser.add_argument('--year_month', type=str, help="The year-month (YYYY-MM) of Reddit data to analyze", default="2018-10")
@@ -18,7 +19,7 @@ parser.add_argument('--log_dir', type=str, help="Log directory for tensorboard",
 args = parser.parse_args()
 
 embedding_dim = 50
-batch_size = 4000
+batch_size = args.batch_size
 params = {'batch_size': batch_size,
           'shuffle': True,
           'num_workers': 2}
