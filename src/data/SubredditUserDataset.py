@@ -23,7 +23,8 @@ class SubredditUserDataset(Dataset):
 
         num_users = len(user_subreddits) if max_users < 0 else max_users
 
-        for i, (user, subreddits) in enumerate(tqdm(user_subreddits.items(), total=num_users)):
+        for i, (user, subreddits) in enumerate(tqdm(user_subreddits.items(), total=num_users,
+                                                    desc='Converting data to PyTorch')):
             if i >= num_users:
                 break
 

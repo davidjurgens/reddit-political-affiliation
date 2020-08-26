@@ -1,25 +1,28 @@
 import argparse
 
+import os
+
 import torch
 from tensorboardX import SummaryWriter
 
 parser = argparse.ArgumentParser(description='Train User2Subreddit word2vec model')
 parser.add_argument('--network', type=str, help="Location of the bipartite network file between users and subreddits")
 parser.add_argument('--flairs', type=str, help="Location of the user flair affiliations")
+parser.add_argument('--num_epochs', type=int, help="The number of epochs to run", default=10)
 parser.add_argument('--out', type=str, help="Output directory")
 parser.add_argument('--device', type=str, help="The GPU to run on (e.g., cuda:0)")
-parser.add_argument('--year_month', type=str, help="The year-month (YYYY-MM) of Reddit data to analyze", default="2018-05")
-parser.add_argument('--month', type=str, help="The month of Reddit data to analyze", default="5")
-parser.add_argument('--logdir', type=str, help="Log directory for tensorboard",
-                    default='/home/kalkiek/projects/reddit-political-affiliation/tensorboard-logs/')
+parser.add_argument('--year_month', type=str, help="The year-month (YYYY-MM) of Reddit data to analyze", default="2018-10")
+parser.add_argument('--max_users', type=int, help="The maximum number of users to train on", default=-1)
+parser.add_argument('--log_dir', type=str, help="Log directory for tensorboard",
+                    default='/shared/0/projects/reddit-political-affiliation/working-dir/tensorboard-logs/')
 args = parser.parse_args()
 
 embedding_dim = 50
 batch_size = 4000
 params = {'batch_size': batch_size,
           'shuffle': True,
-          'num_workers': 6}
-EPOCHS = 5
+          'num_workers': 2}
+EPOCHS = args.num_epochs
 year_month = args.year_month
 
 # User / subreddit data file
@@ -40,8 +43,15 @@ if args.out:
 else:
     out_dir = "/shared/0/projects/reddit-political-affiliation/data/word2vec/" + year_month + "/"
 
-    # Tensorboard
-    writer = SummaryWriter(logdir=args.logdir)
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
+
+log_dir = args.log_dir + '/' + year_month
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+    
+# Tensorboard
+writer = SummaryWriter(logdir=log_dir)
 
 if args.device:
     device = torch.device(args.device)

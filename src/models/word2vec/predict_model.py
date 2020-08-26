@@ -35,13 +35,17 @@ def output_top_n_similar(model, subreddit, all_subreddits, word_to_ix, n):
     cosine_sims = {}
     cos = nn.CosineSimilarity(dim=1, eps=1e-6)
 
+    print('looking up ', subreddit)
+    
     try:
         sub_tensor = torch.tensor([word_to_ix[subreddit]], dtype=torch.long).to(device)
     except KeyError:
         return
 
     for sub in all_subreddits:
-        lookup_tensor = torch.tensor([word_to_ix[sub]], dtype=torch.long).to(device)
+        ix = word_to_ix[sub]
+        # print(ix)
+        lookup_tensor = torch.tensor([ix,], dtype=torch.long).to(device)
         cos_result = cos(model.u_embeddings(sub_tensor), model.u_embeddings(lookup_tensor))
         cosine_sims[sub] = cos_result
 
@@ -59,4 +63,4 @@ def predictions_to_tsv(results, out_path):
     print("Writing predictions to TSV")
     with open(out_path + 'predictions.tsv', 'w') as f:
         for user, pred in results.items():
-            f.write("%s\t%d".format(user, pred))
+            f.write("%s\t%d\n" % (user, pred))

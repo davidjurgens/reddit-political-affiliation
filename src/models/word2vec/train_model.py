@@ -8,15 +8,18 @@ from tqdm import tqdm
 
 import sys
 sys.path.append('../..') # make it work in the root directory
+sys.path.append('.')
 
 from src.data.make_dataset import build_dataset
 from src.models.word2vec.User2Subreddit import User2Subreddit
 from src.models.word2vec.predict_model import predict_user_affiliations, output_top_n_similar
 from src.models.word2vec.train_settings import *
 
+from sklearn.metrics import auc, roc_curve
+
 torch.manual_seed(42)
 
-dataset, training, validation, pol_validation, vocab = build_dataset(network_path, flair_directory)
+dataset, training, validation, pol_validation, vocab = build_dataset(network_path, flair_directory, max_users=args.max_users)
 word_to_ix = {word: i for i, word in enumerate(vocab)}
 all_subreddits = {v for v in vocab if v[:2] == 'r/' and v[2:4] != 'u_'}
 print("# of subreddits: " + str(len(all_subreddits)))
@@ -109,36 +112,54 @@ def pol_validation_iteration(model, sample_size, step):
     political_predictions = model.political_layer(emb_p)
     political_predictions = torch.sigmoid(political_predictions)
 
+    fpr, tpr, thresholds = roc_curve(pol_labels.cpu().detach().numpy(),
+                                     political_predictions.cpu().detach().numpy(), pos_label=1)
+    pol_auc = auc(fpr, tpr)
+
     # Predict the political affiliations and compute the loss
-    pol_loss = loss_function(political_predictions.squeeze(), pol_labels)
-    print("Validation political loss at step {}: ".format(step, pol_loss))
-    writer.add_scalar('validation political loss', pol_loss.cpu().detach().numpy().item(), step)
+    pol_loss = loss_function(political_predictions.squeeze(), pol_labels).cpu().detach().numpy().item()
+    print("Validation political loss at step %d: %f; AUC: %f" % (step, pol_loss, pol_auc))
+    writer.add_scalar('validation political loss', pol_loss, step)
+    writer.add_scalar('validation political AUC', pol_auc, step)
 
     # After evaluation, turn training back on
     model.train()
 
 if __name__ == '__main__':
 
-    sample_subreddits = ['r/nba', '/r/CryptoCurrency', 'r/Conservative']
+    sample_subreddits = ['r/nba', 'r/CryptoCurrency', 'r/Conservative', 'r/Liberal', 'r/AskReddit',
+                         'r/Aww', 'r/Games', 'r/Hunting', 'r/Feminism', 'r/The_Donald',
+                         'r/lawnmowers', 'r/juul', 'r/teenagers']
 
     for epoch in tqdm(range(EPOCHS), desc='Epoch'):
         p_loss = 0
-        for i, data in enumerate(tqdm(train_loader, total=iter_length)):
+        for i, data in enumerate(tqdm(train_loader, total=iter_length), 1):
             step = i * batch_size + epoch * len(training)
             model, loss, p_loss = training_iteration(epoch, i, model, data, p_loss)
 
             writer.add_scalar('word2vec loss', loss.cpu().detach().numpy().item(),
                               i * batch_size + epoch * len(training))
 
-            if i % 1000 == 0:
-                print(' loss at step %d: %f' % (i, loss.cpu().detach().numpy()))
+            if i % 100 == 0:
+                print(' loss at epoch %d, step %d: %f; political loss: %f'  \
+                      % (epoch, i, loss.cpu().detach().numpy(),
+                         p_loss.cpu().detach().numpy()))
 
             # Every 10 percent output the validation loss along with sanity checks
-            if i % int(iter_length/10) == 0:
+            #if i % int(iter_length/10) == 0:
+            if i % 200 == 0:
                 pol_validation_iteration(model, sample_size=100, step=step)
                 validation_iteration(epoch, model, sample_size=10000)
-                [output_top_n_similar(model, sub, all_subreddits, word_to_ix, n=10) for sub in sample_subreddits]
+                if epoch > 3 and i % 10000 == 0:
+                    [output_top_n_similar(model, sub, all_subreddits, word_to_ix, n=10) for sub in sample_subreddits]
 
+        # Run all the validation stuff at the end of the epoch
+        pol_validation_iteration(model, sample_size=100, step=step)
+        validation_iteration(epoch, model, sample_size=10000)
+        if epoch > 3:
+            [output_top_n_similar(model, sub, all_subreddits, word_to_ix, n=10) for sub in sample_subreddits]
+                    
+                    
         # Save the model after every epoch
         torch.save(model.state_dict(), out_dir + str(epoch) + ".pt")
 
