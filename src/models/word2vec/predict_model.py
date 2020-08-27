@@ -36,7 +36,7 @@ def output_top_n_similar(model, subreddit, all_subreddits, word_to_ix, n):
     cos = nn.CosineSimilarity(dim=1, eps=1e-6)
 
     print('looking up ', subreddit)
-    
+
     try:
         sub_tensor = torch.tensor([word_to_ix[subreddit]], dtype=torch.long).to(device)
     except KeyError:
@@ -44,8 +44,7 @@ def output_top_n_similar(model, subreddit, all_subreddits, word_to_ix, n):
 
     for sub in all_subreddits:
         ix = word_to_ix[sub]
-        # print(ix)
-        lookup_tensor = torch.tensor([ix,], dtype=torch.long).to(device)
+        lookup_tensor = torch.tensor([ix, ], dtype=torch.long).to(device)
         cos_result = cos(model.u_embeddings(sub_tensor), model.u_embeddings(lookup_tensor))
         cosine_sims[sub] = cos_result
 

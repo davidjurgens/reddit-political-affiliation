@@ -7,7 +7,8 @@ from torch.utils.data import random_split
 from tqdm import tqdm
 
 import sys
-sys.path.append('../..') # make it work in the root directory
+
+sys.path.append('../..')  # make it work in the root directory
 sys.path.append('.')
 
 from src.data.make_dataset import build_dataset
@@ -19,7 +20,8 @@ from sklearn.metrics import auc, roc_curve
 
 torch.manual_seed(42)
 
-dataset, training, validation, pol_validation, vocab = build_dataset(network_path, flair_directory, max_users=args.max_users)
+dataset, training, validation, pol_validation, vocab = build_dataset(network_path, flair_directory,
+                                                                     max_users=args.max_users)
 word_to_ix = {word: i for i, word in enumerate(vocab)}
 all_subreddits = {v for v in vocab if v[:2] == 'r/' and v[2:4] != 'u_'}
 print("# of subreddits: " + str(len(all_subreddits)))
@@ -86,10 +88,9 @@ def validation_iteration(epoch, model, sample_size):
 
 
 def pol_validation_iteration(model, sample_size, step):
-
     # Switch to evaluation model
     model.eval()
-    
+
     # Select a random sample from the political validation data
     validation_list = list(pol_validation.items())
     sample = dict(random.sample(validation_list, sample_size))
@@ -125,6 +126,7 @@ def pol_validation_iteration(model, sample_size, step):
     # After evaluation, turn training back on
     model.train()
 
+
 if __name__ == '__main__':
 
     sample_subreddits = ['r/nba', 'r/CryptoCurrency', 'r/Conservative', 'r/Liberal', 'r/AskReddit',
@@ -141,12 +143,12 @@ if __name__ == '__main__':
                               i * batch_size + epoch * len(training))
 
             if i % 100 == 0:
-                print(' loss at epoch %d, step %d: %f; political loss: %f'  \
+                print(' loss at epoch %d, step %d: %f; political loss: %f' \
                       % (epoch, i, loss.cpu().detach().numpy(),
                          p_loss.cpu().detach().numpy()))
 
             # Every 10 percent output the validation loss along with sanity checks
-            #if i % int(iter_length/10) == 0:
+            # if i % int(iter_length/10) == 0:
             if i % 200 == 0:
                 pol_validation_iteration(model, sample_size=100, step=step)
                 validation_iteration(epoch, model, sample_size=10000)
@@ -158,8 +160,7 @@ if __name__ == '__main__':
         validation_iteration(epoch, model, sample_size=10000)
         if epoch > 3:
             [output_top_n_similar(model, sub, all_subreddits, word_to_ix, n=10) for sub in sample_subreddits]
-                    
-                    
+
         # Save the model after every epoch
         torch.save(model.state_dict(), out_dir + str(epoch) + ".pt")
 
