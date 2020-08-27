@@ -9,7 +9,7 @@ from json import JSONDecodeError
 """  Script to parse out user flair information from Reddit comments and posts 
      
      Sample row of data
-        - username: {subreddit1: [falir1, flair2], subreddit2: [flair3]}
+        - username: {subreddit1: [flair1, flair2], subreddit2: [flair3]}
 """
 
 
