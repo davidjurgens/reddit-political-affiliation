@@ -124,7 +124,7 @@ def pol_validation_iteration(model, sample_size, step):
     writer.add_scalar('validation political AUC', pol_auc, step)
 
     # After evaluation, turn training back on
-    model.train()
+    model.train(True)
 
 
 if __name__ == '__main__':
@@ -147,7 +147,6 @@ if __name__ == '__main__':
                       % (epoch, i, loss.cpu().detach().numpy(),
                          p_loss.cpu().detach().numpy()))
 
-            # Every 10 percent output the validation loss along with sanity checks
             # if i % int(iter_length/10) == 0:
             if i % 200 == 0:
                 pol_validation_iteration(model, sample_size=100, step=step)
