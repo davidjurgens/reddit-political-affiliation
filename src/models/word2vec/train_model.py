@@ -1,4 +1,5 @@
 import random
+import sys
 
 import torch.nn as nn
 import torch.optim as optim
@@ -6,14 +7,13 @@ from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from tqdm import tqdm
 
-import sys
-
 sys.path.append('../..')  # make it work in the root directory
 sys.path.append('.')
 
 from src.data.make_dataset import build_dataset
 from src.models.word2vec.User2Subreddit import User2Subreddit
-from src.models.word2vec.predict_model import predict_user_affiliations, output_top_n_similar
+from src.models.word2vec.predict_model import predict_user_affiliations, top_n_similar_embeddings, \
+    save_similar_embeddings_to_tsv
 from src.models.word2vec.train_settings import *
 
 from sklearn.metrics import auc, roc_curve
@@ -153,13 +153,17 @@ if __name__ == '__main__':
                 pol_validation_iteration(model, sample_size=100, step=step)
                 validation_iteration(epoch, model, sample_size=10000)
                 if epoch > 3 and i % 10000 == 0:
-                    [output_top_n_similar(model, sub, all_subreddits, word_to_ix, n=10) for sub in sample_subreddits]
+                    [top_n_similar_embeddings(model, sub, all_subreddits, word_to_ix, n=10) for sub in
+                     sample_subreddits]
 
         # Run all the validation stuff at the end of the epoch
         pol_validation_iteration(model, sample_size=100, step=step)
         validation_iteration(epoch, model, sample_size=10000)
         if epoch > 3:
-            [output_top_n_similar(model, sub, all_subreddits, word_to_ix, n=10) for sub in sample_subreddits]
+            for sub in sample_subreddits:
+                similar_subs = top_n_similar_embeddings(model, sub, all_subreddits, word_to_ix, n=10)
+                save_similar_embeddings_to_tsv(sub, similar_subs, epoch, step, out_dir)
+            [top_n_similar_embeddings(model, sub, all_subreddits, word_to_ix, n=10) for sub in sample_subreddits]
 
         # Save the model after every epoch
         torch.save(model.state_dict(), out_dir + str(epoch) + ".pt")

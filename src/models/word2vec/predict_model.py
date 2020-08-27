@@ -31,7 +31,7 @@ def predict_user_affiliations(model, dataset, out_dir):
     predictions_to_tsv(user_predictions, out_dir)
 
 
-def output_top_n_similar(model, subreddit, all_subreddits, word_to_ix, n):
+def top_n_similar_embeddings(model, subreddit, all_subreddits, word_to_ix, n):
     cosine_sims = {}
     cos = nn.CosineSimilarity(dim=1, eps=1e-6)
 
@@ -57,9 +57,19 @@ def output_top_n_similar(model, subreddit, all_subreddits, word_to_ix, n):
     for sub, score in top_results.items():
         print(sub, score)
 
+    return top_results
+
 
 def predictions_to_tsv(results, out_path):
     print("Writing predictions to TSV")
     with open(out_path + 'predictions.tsv', 'w') as f:
         for user, pred in results.items():
             f.write("%s\t%d\n" % (user, pred))
+
+
+def save_similar_embeddings_to_tsv(subreddit, similar_subs, epoch, step, out_dir):
+    out_file = out_dir + subreddit + '_' + epoch + '_' + step + '.tsv'
+    print("Outputting similar subreddits of {} to the file {}".format(subreddit, out_file))
+    with open(out_file, 'w') as f:
+        for sub, score in similar_subs.items():
+            f.write("%s\t%d\n" % (sub, score))
