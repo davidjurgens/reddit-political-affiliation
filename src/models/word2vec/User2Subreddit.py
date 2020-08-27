@@ -11,6 +11,7 @@ class User2Subreddit(nn.Module):
         self.u_embeddings = nn.Embedding(num_users, emb_dimension)
         self.v_embeddings = nn.Embedding(num_subreddits, emb_dimension)
         self.political_layer = nn.Linear(emb_dimension, 1)
+        self.before_pol_dropout = nn.Dropout(p=0.5)
         self.init_emb()
 
     def init_emb(self):
@@ -31,6 +32,7 @@ class User2Subreddit(nn.Module):
         # If we have political users to predict for
         if political_user_ids.sum() > 0:
             emb_p = self.u_embeddings(political_user_ids)
+            emb_p = self.before_pol_dropout(emb_p)
             political_predictions = self.political_layer(emb_p)
             political_predictions = torch.sigmoid(political_predictions)
         else:
