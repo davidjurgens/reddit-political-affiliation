@@ -31,7 +31,8 @@ class User2Subreddit(nn.Module):
         # If we have political users to predict for
         if political_user_ids.sum() > 0:
             emb_p = self.u_embeddings(political_user_ids)
-            political_predictions = self.political_layer(emb_p)
+            drop = nn.Dropout()
+            political_predictions = self.political_layer(drop(emb_p))
             political_predictions = torch.sigmoid(political_predictions)
         else:
             political_predictions = None
