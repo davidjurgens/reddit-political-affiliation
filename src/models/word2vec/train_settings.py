@@ -56,6 +56,8 @@ if not os.path.exists(log_dir):
 writer = SummaryWriter(logdir=log_dir)
 
 if args.device:
+    torch.cuda.set_device(int(args.device[-1]))
     device = torch.device(args.device)
 else:
     device = torch.device("cuda:0")
+    torch.cuda.set_device(0)

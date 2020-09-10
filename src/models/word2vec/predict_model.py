@@ -44,7 +44,7 @@ def top_n_similar_embeddings(model, subreddit, all_subreddits, word_to_ix, n):
 
     for sub in all_subreddits:
         ix = word_to_ix[sub]
-        lookup_tensor = torch.tensor([ix, ], dtype=torch.long).to(device)
+        lookup_tensor = torch.tensor([ix], dtype=torch.long).to(device)
         cos_result = cos(model.u_embeddings(sub_tensor), model.u_embeddings(lookup_tensor))
         cosine_sims[sub] = cos_result
 

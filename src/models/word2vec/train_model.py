@@ -148,21 +148,17 @@ if __name__ == '__main__':
                          p_loss.cpu().detach().numpy()))
 
             # if i % int(iter_length/10) == 0:
-            if i % 200 == 0:
+            if i % 500 == 0:
                 pol_validation_iteration(model, sample_size=100, step=step)
                 validation_iteration(epoch, model, sample_size=10000)
-                if epoch > 3 and i % 10000 == 0:
-                    [top_n_similar_embeddings(model, sub, all_subreddits, word_to_ix, n=10) for sub in
-                     sample_subreddits]
 
         # Run all the validation stuff at the end of the epoch
-        pol_validation_iteration(model, sample_size=100, step=step)
-        validation_iteration(epoch, model, sample_size=10000)
-        if epoch > 3:
-            for sub in sample_subreddits:
-                similar_subs = top_n_similar_embeddings(model, sub, all_subreddits, word_to_ix, n=10)
-                save_similar_embeddings_to_tsv(sub, similar_subs, epoch, step, out_dir)
-            [top_n_similar_embeddings(model, sub, all_subreddits, word_to_ix, n=10) for sub in sample_subreddits]
+        # pol_validation_iteration(model, sample_size=100, step=step)
+        # validation_iteration(epoch, model, sample_size=10000)
+        # if epoch >= 0:
+        #     for sub in sample_subreddits:
+        #         similar_subs = top_n_similar_embeddings(model, sub, all_subreddits, word_to_ix, n=10)
+        #         save_similar_embeddings_to_tsv(sub, similar_subs, epoch, step, out_dir)
 
         # Save the model after every epoch
         torch.save(model.state_dict(), out_dir + str(epoch) + ".pt")
@@ -170,4 +166,4 @@ if __name__ == '__main__':
     writer.close()
 
     # When the model is done training predict all user affiliations
-    predict_user_affiliations(model, dataset, out_dir=out_dir)
+    # predict_user_affiliations(model, dataset, out_dir=out_dir)
