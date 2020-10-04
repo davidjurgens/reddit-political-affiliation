@@ -17,6 +17,8 @@ parser.add_argument('--year_month', type=str, help="The year-month (YYYY-MM) of 
 parser.add_argument('--max_users', type=int, help="The maximum number of users to train on", default=-1)
 parser.add_argument('--log_dir', type=str, help="Log directory for tensorboard",
                     default='/shared/0/projects/reddit-political-affiliation/working-dir/tensorboard-logs/')
+parser.add_argument('--data_directory', type=str,
+                    default='/shared/0/projects/reddit-political-affiliation/data/word2vec/dataset/')
 args = parser.parse_args()
 
 embedding_dim = 50
@@ -26,6 +28,7 @@ params = {'batch_size': batch_size,
           'num_workers': 2}
 EPOCHS = args.num_epochs
 year_month = args.year_month
+data_directory = args.data_directory + year_month + '/'
 
 # User / subreddit data file
 if args.network:

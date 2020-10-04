@@ -20,14 +20,13 @@ def build_dataset(network_path, flair_directory, validation_split=0.1, max_users
     print("User to politics validation size: {}: " + str(len(pol_validation)))
 
     # Create validation data for training data
-    dataset = SubredditUserDataset(user_subreddits, all_subreddits, user_to_politics=pol_training,
-                                   max_users=max_users)
+    dataset = SubredditUserDataset(user_subreddits, all_subreddits, user_to_politics=pol_training, max_users=max_users)
 
     # Reset what are the actual subreddits
     all_subreddits = set(dataset.subreddit_to_idx.keys())
     user_subreddits = dict((k, user_subreddits[k]) for k in user_subreddits if k in dataset.user_to_idx)
     vocab = all_subreddits | set(user_subreddits)
-    
+
     validation_size = int(validation_split * len(dataset))
     train_size = len(dataset) - validation_size
 

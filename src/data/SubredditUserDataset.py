@@ -1,5 +1,5 @@
 import random
-
+import pickle
 import numpy as np
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -12,6 +12,8 @@ class SubredditUserDataset(Dataset):
         # Mappings to the embedding dimensions
         self.user_to_idx = {}
         self.subreddit_to_idx = {}
+        self.user_subreddits = user_subreddits
+        self.user_to_politics = user_to_politics
 
         def get_sub_idx(subreddit):
             if subreddit in self.subreddit_to_idx:
@@ -65,3 +67,8 @@ class SubredditUserDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.pos_and_neg_samples[idx]
+
+    # Pickle?
+    def save_model(self, path):
+        with open(path + '.pickle', 'wb') as handle:
+            pickle.dump(self, handle, protocol=pickle.HIGHEST_PROTOCOL)
