@@ -91,10 +91,10 @@ def extract_zst_data(fname, user_to_subreddit_counts):
 if __name__ == '__main__':
     files = glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
     files.extend('/shared/2/datasets/reddit-dump-all/RS/*.zst')
-    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
-    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.bz2'))
-    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
-    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
+    # files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
+    # files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.bz2'))
+    # files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
+    # files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
 
     out_directory = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/'
     m_files = get_month_to_files(files)
