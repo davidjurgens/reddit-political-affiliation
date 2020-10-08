@@ -21,7 +21,7 @@ from sklearn.metrics import auc, roc_curve
 torch.manual_seed(42)
 
 dataset, training, validation, pol_validation, vocab = build_dataset(network_path, flair_directory, max_users=args.max_users)
-dataset.save_model(data_directory)
+dataset.id_mappings_to_tsv(data_directory)
 
 word_to_ix = {word: i for i, word in enumerate(vocab)}
 all_subreddits = {v for v in vocab if v[:2] == 'r/' and v[2:4] != 'u_'}

@@ -68,7 +68,21 @@ class SubredditUserDataset(Dataset):
     def __getitem__(self, idx):
         return self.pos_and_neg_samples[idx]
 
-    # Pickle?
-    def save_model(self, path):
-        with open(path + '.pickle', 'wb') as handle:
-            pickle.dump(self, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    def id_mappings_to_tsv(self, path):
+        print("Saving user id mappings")
+        dict_to_tsv(file_path=path + 'user_ids.tsv', dictionary=self.user_to_idx)
+
+        print("Saving subreddit id mappings")
+        dict_to_tsv(file_path=path + 'subreddit_ids.tsv', dictionary=self.subreddit_to_idx)
+
+        print("Saving user subreddits")
+        with open(path + 'user_subreddits.tsv', 'w') as f:
+            for user, subreddits in self.user_subreddits.items():
+                for sub in subreddits:
+                    f.write("{}\t{}\n".format(user, sub))
+
+
+def dict_to_tsv(file_path, dictionary):
+    with open(file_path, 'w') as f:
+        for k, v in dictionary.items():
+            f.write("{}\t{}\n".format(k, v))
