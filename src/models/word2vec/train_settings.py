@@ -25,10 +25,10 @@ embedding_dim = 50
 batch_size = args.batch_size
 params = {'batch_size': batch_size,
           'shuffle': True,
-          'num_workers': 2}
+          'num_workers': 0}
 EPOCHS = args.num_epochs
 year_month = args.year_month
-data_directory = args.data_directory + year_month + '/'
+data_directory = args.data_directory + year_month
 
 # User / subreddit data file
 if args.network:
