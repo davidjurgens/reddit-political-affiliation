@@ -1,5 +1,7 @@
 import random
 import pickle
+from collections import defaultdict
+
 import numpy as np
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -81,8 +83,30 @@ class SubredditUserDataset(Dataset):
                 for sub in subreddits:
                     f.write("{}\t{}\n".format(user, sub))
 
+    def load_id_mappings(self, path):
+        print("Loading user and subreddit id mappings")
+        self.user_to_idx = dict_from_tsv(path + '_user_ids.tsv')
+        self.subreddit_to_idx = dict_from_tsv(path + '_subreddit_ids.tsv')
+
+        print("Loading user subreddits")
+        user_subreddits = defaultdict(list)
+        with open(path + 'user_subreddits.tsv', 'r') as f:
+            for line in f:
+                user, subreddit = line.strip().split('\t')
+                user_subreddits[user].append(subreddit)
+        self.user_subreddits = user_subreddits
+
 
 def dict_to_tsv(file_path, dictionary):
     with open(file_path, 'w') as f:
         for k, v in dictionary.items():
             f.write("{}\t{}\n".format(k, v))
+
+
+def dict_from_tsv(file_path):
+    dictionary = {}
+    with open(file_path, 'r') as f:
+        for line in f:
+            k, v = line.strip().split('\t')
+            dictionary[k] = int(v)
+    return dictionary
