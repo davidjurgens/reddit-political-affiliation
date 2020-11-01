@@ -33,6 +33,9 @@ validation_loader = DataLoader(validation, **params)
 iter_length = len(training) / batch_size
 
 model = User2Subreddit(dataset.num_users(), embedding_dim, dataset.num_subreddits())
+if load_from!=-1:
+    model.load_state_dict(torch.load(out_dir+str(load_from)+'.pt',map_location=device))
+    print("load from"+str(load_from)+".pt")
 model.to(device)
 optimizer = optim.AdamW(model.parameters(), lr=0.0001)
 loss_function = nn.BCELoss()
@@ -162,7 +165,7 @@ if __name__ == '__main__':
         #         save_similar_embeddings_to_tsv(sub, similar_subs, epoch, step, out_dir)
 
         # Save the model after every epoch
-        torch.save(model.state_dict(), out_dir + str(epoch) + ".pt")
+        torch.save(model.state_dict(), out_dir + str(epoch+load_from+1) + ".pt")
 
     writer.close()
 
