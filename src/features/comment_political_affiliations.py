@@ -159,7 +159,12 @@ def user_politics_to_tsv(user_politics, out_file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get political affiliations from comments')
     parser.add_argument('--dir', type=str, help="The directory of the raw/compressed reddit files to run on")
-    parser.add_argument('--out', type=str, help="Output directory for the political affiliations and bad actors")
+    parser.add_argument('--out_politics', type=str,
+                        help="Output directory for the political affiliations and bad actors",
+                        default="/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/")
+    parser.add_argument('--out_bad_actors', type=str,
+                        help="Output directory for the political affiliations and bad actors",
+                        default="/shared/0/projects/reddit-political-affiliation/data/bad-actors/")
     args = parser.parse_args()
     files = glob.glob(args.dir)
 
@@ -172,7 +177,7 @@ if __name__ == '__main__':
             user_politics = parse_comment_affiliations(file)
 
         fname = parse_name_from_filepath(file)
-        out_file_actors = args.out + fname + "_bad_actors.tsv"
-        out_file = args.out + fname + ".tsv"
+        out_file_actors = args.out_bad_actors + fname + ".tsv"
+        out_file = args.out_politics + fname + ".tsv"
         user_politics = handle_bad_actors(user_politics, out_file_actors)
         user_politics_to_tsv(user_politics, out_file)
