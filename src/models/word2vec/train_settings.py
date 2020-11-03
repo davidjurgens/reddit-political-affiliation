@@ -19,7 +19,7 @@ parser.add_argument('--log_dir', type=str, help="Log directory for tensorboard",
                     default='/shared/0/projects/reddit-political-affiliation/working-dir/tensorboard-logs/')
 parser.add_argument('--data_directory', type=str,
                     default='/shared/0/projects/reddit-political-affiliation/data/word2vec/dataset/')
-parser.add_argument('--load_from',type=int,help='If load from a existing model',default=-1)
+parser.add_argument('--load_from', type=int, help='If load from a existing model', default=-1)
 args = parser.parse_args()
 
 embedding_dim = 50
@@ -43,7 +43,7 @@ if args.flairs:
     flair_directory = args.flairs
 else:
     flair_directory = "/shared/0/projects/reddit-political-affiliation/data/flair-affiliations/" + year_month + ".tsv"
-    #flair_directory = "src/data/" + year_month + ".tsv"
+    # flair_directory = "src/data/" + year_month + ".tsv"
 
 if args.out:
     out_dir = args.out
@@ -67,5 +67,5 @@ else:
     device = torch.device("cuda:0")
     torch.cuda.set_device(0)
 
-load_from=args.load_from
+load_from = args.load_from
 print(load_from)
