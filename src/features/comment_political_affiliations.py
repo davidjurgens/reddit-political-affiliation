@@ -109,7 +109,7 @@ def parse_zst_comment_affiliations(filename):
         dctx = zstd.ZstdDecompressor()
         with dctx.stream_reader(f) as reader:
             while True:
-                chunk = reader.read(999999)
+                chunk = reader.read(1000000000)  # Read in 1GB at a time
                 if not chunk:
                     break
 
