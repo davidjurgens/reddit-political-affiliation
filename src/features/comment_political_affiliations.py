@@ -53,7 +53,7 @@ def parse_comment_affiliations(file_path):
             print("Failed to parse line: {} with error: {}".format(line, e))
 
         if count % 1000000 == 0 and count > 0:
-            print("Completed {} lines. Number of political users so far: {}}".format(count, len(user_politics)))
+            print("Completed {} lines. Number of political users so far: {}".format(count, len(user_politics)))
 
     print("File completed! Total political users found: {}".format(len(user_politics)))
     print("Democrat matches: {}. Anti-Republican matches: {}. Republican matches: {}. Anti-Democrat matches: {}"
@@ -140,7 +140,7 @@ def parse_zst_comment_affiliations(filename):
 
                     count += 1
                     if count % 1000000 == 0 and count > 0:
-                        print("Completed {} lines for file: {}. Number of political users so far: {}}"
+                        print("Completed {} lines for file: {}. Number of political users so far: {}"
                               .format(count, filename, len(user_politics)))
 
     print("File completed! Total political users found: {}".format(len(user_politics)))
