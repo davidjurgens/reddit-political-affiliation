@@ -9,10 +9,13 @@ from tqdm import tqdm
 from src.data.SubredditUserDataset import SubredditUserDataset
 
 
-def build_dataset(network_path, flair_directory, validation_split=0.1, max_users=-1):
+def build_dataset(network_path, flair_directory, comment_directory, validation_split=0.1, max_users=-1):
     user_subreddits, vocab, all_subreddits = build_user_to_subreddits(network_path)
     flair_files = glob.glob(flair_directory)
-    user_to_politics = read_political_affiliations(flair_files)
+    comment_files = glob.glob(comment_directory)
+    flair_politics = read_flair_political_affiliations(flair_files)
+    comment_politics = read_comment_political_affiliations(comment_files)
+    user_to_politics = {**flair_politics, **comment_politics}
 
     # Create validation dataset for political flairs
     pol_validation, pol_training = dict_random_split(user_to_politics, split_size=validation_split)
@@ -60,10 +63,10 @@ def build_user_to_subreddits(bipartite_network):
     return user_subreddits, vocab, all_subreddits
 
 
-def read_political_affiliations(files):
+def read_flair_political_affiliations(files):
     user_to_politic_counts = defaultdict(Counter)
 
-    for fname in tqdm(files):
+    for fname in tqdm(files, desc="Loading flair politics"):
         with open(fname, 'rt') as f:
             for line in f:
                 user, politics, freq = line.split('\t')
@@ -78,7 +81,20 @@ def read_political_affiliations(files):
             continue
         user_to_politics[u] = list(pc.keys())[0]
 
-    print('Saw political affiliations for %d users' % len(user_to_politics))
+    print('Saw political affiliations for %d users from flairs' % len(user_to_politics))
+    return convert_affiliations_to_binary(user_to_politics)
+
+
+def read_comment_political_affiliations(files):
+    user_to_politics = {}
+
+    for fname in tqdm(files, desc="Loading politics from comment affiliations"):
+        with open(fname, 'r') as f:
+            for line in f:
+                user, politics = line.split('\t')
+                user_to_politics[user] = politics
+
+    print('Saw political affiliations for %d users from comments' % len(user_to_politics))
     return convert_affiliations_to_binary(user_to_politics)
 
 

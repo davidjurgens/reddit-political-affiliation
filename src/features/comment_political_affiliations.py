@@ -31,8 +31,10 @@ def parse_comment_affiliations(file_path):
     for count, line in enumerate(file_pointer):
         try:
             submission = json.loads(file_pointer.readline().strip())
-            username, body, subreddit = submission['author'], submission['body'], submission['subreddit']
-            text = body.lower()
+            username = submission['author']
+            text = ""
+            if "body" in submission:
+                text += submission['body'].lower()
             if "title" in submission:
                 text += " " + submission['title'].lower()
 
@@ -118,8 +120,10 @@ def parse_zst_comment_affiliations(filename):
                 for i, line in enumerate(lines[:-1]):
                     try:
                         submission = json.loads(line)
-                        username, body, subreddit = submission['author'], submission['body'], submission['subreddit']
-                        text = body.lower()
+                        username = submission['author']
+                        text = ""
+                        if "body" in submission:
+                            text += submission['body'].lower()
                         if "title" in submission:
                             text += " " + submission['title'].lower()
 

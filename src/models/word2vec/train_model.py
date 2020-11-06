@@ -20,7 +20,8 @@ from sklearn.metrics import auc, roc_curve
 
 torch.manual_seed(42)
 
-dataset, training, validation, pol_validation, vocab = build_dataset(network_path, flair_directory, max_users=args.max_users)
+dataset, training, validation, pol_validation, vocab = build_dataset(network_path, flair_directory, comment_directory,
+                                                                     max_users=args.max_users)
 dataset.id_mappings_to_tsv(data_directory)
 
 word_to_ix = {word: i for i, word in enumerate(vocab)}
@@ -33,9 +34,9 @@ validation_loader = DataLoader(validation, **params)
 iter_length = len(training) / batch_size
 
 model = User2Subreddit(dataset.num_users(), embedding_dim, dataset.num_subreddits())
-if load_from!=-1:
-    model.load_state_dict(torch.load(out_dir+str(load_from)+'.pt',map_location=device))
-    print("load from"+str(load_from)+".pt")
+if load_from != -1:
+    model.load_state_dict(torch.load(out_dir + str(load_from) + '.pt', map_location=device))
+    print("load from" + str(load_from) + ".pt")
 model.to(device)
 optimizer = optim.AdamW(model.parameters(), lr=0.0001)
 loss_function = nn.BCELoss()
@@ -165,7 +166,7 @@ if __name__ == '__main__':
         #         save_similar_embeddings_to_tsv(sub, similar_subs, epoch, step, out_dir)
 
         # Save the model after every epoch
-        torch.save(model.state_dict(), out_dir + str(epoch+load_from+1) + ".pt")
+        torch.save(model.state_dict(), out_dir + str(epoch + load_from + 1) + ".pt")
 
     writer.close()
 

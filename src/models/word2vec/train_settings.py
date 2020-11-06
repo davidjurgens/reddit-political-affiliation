@@ -8,6 +8,8 @@ from tensorboardX import SummaryWriter
 parser = argparse.ArgumentParser(description='Train User2Subreddit word2vec model')
 parser.add_argument('--network', type=str, help="Location of the bipartite network file between users and subreddits")
 parser.add_argument('--flairs', type=str, help="Location of the user flair affiliations")
+parser.add_argument('--comments', type=str, help="Location of the comment political affiliations",
+                    default="/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/")
 parser.add_argument('--num_epochs', type=int, help="The number of epochs to run", default=10)
 parser.add_argument('--batch_size', type=int, help="The batch size", default=512)
 parser.add_argument('--out', type=str, help="Output directory")
@@ -44,6 +46,8 @@ if args.flairs:
 else:
     flair_directory = "/shared/0/projects/reddit-political-affiliation/data/flair-affiliations/" + year_month + ".tsv"
     # flair_directory = "src/data/" + year_month + ".tsv"
+
+comment_directory = args.comments + "*" + year_month + ".tsv"
 
 if args.out:
     out_dir = args.out
