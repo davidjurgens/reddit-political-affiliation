@@ -71,7 +71,9 @@ def build_train_test_dev(user_words_dir, word_count_dir ,train, test, dev):
     #     json.dump(word_count, fp)
     word_count=Counter(json.load(open(word_count_dir)))
     sorted_count = word_count.most_common()
-    start, dim = 0, 20000
+    print(len(sorted_count))
+    start, dim = 1000,200000
+    print("from", str(start),"to",str(start+dim))
     uni2id, bi2id = tokens2id(start, dim, sorted_count)
     train_matrix = convert_to_matrix(filter_train, uni2id, bi2id, dim)
     test_matrix = convert_to_matrix(filter_test, uni2id, bi2id, dim)

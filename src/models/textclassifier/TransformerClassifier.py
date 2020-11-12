@@ -24,6 +24,7 @@ test_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-re
 dev_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/dev.json'
 comments_dir='/shared/0/projects/reddit-political-affiliation/data/user-comments/'
 preparing=0
+test_mode=1
 
 def get_comments(file_pointer, ground_pol):
     text_list = []
@@ -63,7 +64,8 @@ def prepare_features(seq_1, max_seq_length=50,
         while len(input_ids) < max_seq_length:
             input_ids.append(0)
             input_mask.append(0)
-    return torch.tensor(input_ids).unsqueeze(0), input_mask
+    #print(torch.tensor(input_ids).shape)
+    return torch.tensor(input_ids), input_mask
 
 
 class Intents(Dataset):
@@ -92,6 +94,7 @@ def evaluate(model,data):
         if torch.cuda.is_available():
             sent = sent.cuda()
             label = label.cuda()
+        label=label.long()
         output = model.forward(sent)[0]
         _, predicted = torch.max(output.data, 1)
         total += label.size(0)
@@ -109,7 +112,7 @@ if __name__ == '__main__':
     dev = json.load(open(dev_dir))
     year_month='2019-05'
     dv="cuda:1"
-    load_from=9
+    load_from=14
     if preparing:
         file_path = '/shared/2/datasets/reddit-dump-all/RC/RC_' + year_month + ('.xz' if year_month[-1] < '7' else '.zst')
         print(file_path)
@@ -134,11 +137,6 @@ if __name__ == '__main__':
         config = RobertaConfig.from_pretrained('roberta-base')
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
         model = RobertaForSequenceClassification(config)
-        if load_from != -1:
-            model.load_state_dict(torch.load(comments_dir + year_month + "/"+ str(load_from) + '.pt', map_location=device))
-            print("load from" + str(load_from) + ".pt")
-        model.cuda()
-
         train_set = Intents(train_data)
         test_set = Intents(test_data)
         dev_set = Intents(dev_data)
@@ -146,47 +144,57 @@ if __name__ == '__main__':
         train_loader = DataLoader(train_set, **params)
         test_loader = DataLoader(test_set, **params)
         dev_loader = DataLoader(dev_set, **params)
+        print(len(train_loader), len(test_loader), len(dev_loader))
 
-        print(len(train_loader),len(test_loader),len(dev_loader))
+        if not test_mode:
+            if load_from != -1:
+                model.load_state_dict(torch.load(comments_dir + year_month + "/"+ str(load_from) + '.pt', map_location=device))
+                print("load from" + str(load_from) + ".pt")
+            model.cuda()
 
-        loss_function = nn.CrossEntropyLoss()
-        learning_rate = 1e-05
-        optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+            loss_function = nn.CrossEntropyLoss()
+            learning_rate = 1e-05
+            optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+            iter_length = len(train_loader)
 
+            max_epochs = 50
 
-        max_epochs = 10
+            try:
+                best=0
+                for epoch in range(max_epochs):
+                    model = model.train()
+                    print("EPOCH -- {}".format(epoch))
+                    for i, (sent, label) in tqdm(enumerate(train_loader),total=iter_length):
+                        optimizer.zero_grad()
+                        sent = sent.squeeze(1)
+                        if torch.cuda.is_available():
+                            sent = sent.cuda()
+                            label = label.cuda()
+                        label=label.long()
+                        output = model.forward(sent)[0]
+                        _, predicted = torch.max(output, 1)
+                        loss = loss_function(output, label)
+                        loss.backward()
+                        optimizer.step()
 
-        try:
-            best=0
-            for epoch in range(max_epochs):
-                model = model.train()
-                print("EPOCH -- {}".format(epoch))
-                for i, (sent, label) in tqdm(enumerate(train_loader)):
-                    optimizer.zero_grad()
-                    sent = sent.squeeze(1)
-                    if torch.cuda.is_available():
-                        sent = sent.cuda()
-                        label = label.cuda()
-                    label=label.long()
-                    output = model.forward(sent)[0]
-                    _, predicted = torch.max(output, 1)
-                    loss = loss_function(output, label)
-                    loss.backward()
-                    optimizer.step()
+                        if (i+1)%100==0:
+                            print(loss)
 
-                    if (i+1)%100==0:
-                        print(loss)
+                    print("Evaluation on dev set:")
+                    mc=evaluate(model,dev_loader)
+                    if mc>best:
+                        print("Updating Best Score:",str(mc), "saving model...")
+                        torch.save(model.state_dict(), comments_dir + year_month + "/" + str(epoch + load_from + 1) + ".pt")
+                        best=mc
 
-                print("Evaluation on dev set:")
-                mc=evaluate(model,dev_loader)
-                if mc>best:
-                    print("Updating Best Score:",str(mc), "saving model...")
-                    torch.save(model.state_dict(), comments_dir + year_month + "/" + str(epoch + load_from + 1) + ".pt")
-                    best=mc
-
-        except KeyboardInterrupt:
+            except KeyboardInterrupt:
+                torch.save(model.state_dict(), comments_dir + year_month + "/" + "finished.pt")
+                print("Evaluation on test set:")
+                mc=evaluate(model,test_loader)
             print("Evaluation on test set:")
             mc=evaluate(model,test_loader)
-        print("Evaluation on test set:")
-        mc=evaluate(model,test_loader)
+        else:
+            model.load_state_dict(torch.load(comments_dir+year_month+"/17.pt", map_location=device))
+            print("Evaluation on test set:")
+            mc = evaluate(model, test_loader)
 
