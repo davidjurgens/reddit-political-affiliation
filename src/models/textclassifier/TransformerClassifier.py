@@ -107,15 +107,14 @@ if __name__ == '__main__':
     train = json.load(open(train_dir))
     test = json.load(open(test_dir))
     dev = json.load(open(dev_dir))
-<<<<<<< HEAD
+
     year_month='2019-05'
     dv="cuda:7"
     load_from=14
-=======
+
     year_month = '2019-05'
     dv = "cuda:1"
     load_from = 14
->>>>>>> ec0ce47778cee10fc3f317693568f5d28cb1222b
     if preparing:
         file_path = '/shared/2/datasets/reddit-dump-all/RC/RC_' + year_month + (
             '.xz' if year_month[-1] < '7' else '.zst')
@@ -200,11 +199,9 @@ if __name__ == '__main__':
             print("Evaluation on test set:")
             mc = evaluate(model, test_loader)
         else:
-<<<<<<< HEAD
             model.load_state_dict(torch.load(comments_dir+year_month+"/17.pt", map_location=device))
             model.cuda()
-=======
             model.load_state_dict(torch.load(comments_dir + year_month + "/17.pt", map_location=device))
->>>>>>> ec0ce47778cee10fc3f317693568f5d28cb1222b
+
             print("Evaluation on test set:")
             mc = evaluate(model, test_loader)

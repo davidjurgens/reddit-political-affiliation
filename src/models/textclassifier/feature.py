@@ -75,15 +75,7 @@ def build_train_test_dev(user_words_dir, word_count_dir, train, test, dev):
     word_count = Counter(json.load(open(word_count_dir)))
     sorted_count = word_count.most_common()
     print(len(sorted_count))
-<<<<<<< HEAD
-    start, dim = 0,10000
-    print("from", str(start),"to",str(start+dim))
-    uni2id, bi2id,id2token = tokens2id(start, dim, sorted_count)
-    train_matrix = convert_to_matrix(filter_train, uni2id, bi2id, dim)
-    test_matrix = convert_to_matrix(filter_test, uni2id, bi2id, dim)
-    dev_matrix = convert_to_matrix(filter_dev, uni2id, bi2id, dim)
-    return (train_matrix,train_y), (test_matrix,test_y), (dev_matrix,dev_y),id2token
-=======
+
     start, dim = 1000, 200000
     print("from", str(start), "to", str(start + dim))
     uni2id, bi2id = tokens2id(start, dim, sorted_count)
@@ -91,4 +83,3 @@ def build_train_test_dev(user_words_dir, word_count_dir, train, test, dev):
     test_matrix = convert_to_matrix(filter_test, uni2id, bi2id, dim)
     dev_matrix = convert_to_matrix(filter_dev, uni2id, bi2id, dim)
     return (train_matrix, train_y), (test_matrix, test_y), (dev_matrix, dev_y)
->>>>>>> ec0ce47778cee10fc3f317693568f5d28cb1222b
