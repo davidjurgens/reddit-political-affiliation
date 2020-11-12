@@ -24,6 +24,7 @@ def tokens2id(start, dim, sorted_count):
     uni2id = {}
     bi2id = {}
     count = 0
+    id2token={}
     for idx, (k, v) in enumerate(sorted_count):
         if count == dim:
             break
@@ -32,8 +33,9 @@ def tokens2id(start, dim, sorted_count):
                 bi2id[k] = count
             else:
                 uni2id[k] = count
+            id2token[count]=k
             count += 1
-    return uni2id, bi2id
+    return uni2id, bi2id,id2token
 
 
 def convert_to_matrix(raw_data, uni2id, bi2id, dim):
@@ -72,10 +74,10 @@ def build_train_test_dev(user_words_dir, word_count_dir ,train, test, dev):
     word_count=Counter(json.load(open(word_count_dir)))
     sorted_count = word_count.most_common()
     print(len(sorted_count))
-    start, dim = 1000,200000
+    start, dim = 0,10000
     print("from", str(start),"to",str(start+dim))
-    uni2id, bi2id = tokens2id(start, dim, sorted_count)
+    uni2id, bi2id,id2token = tokens2id(start, dim, sorted_count)
     train_matrix = convert_to_matrix(filter_train, uni2id, bi2id, dim)
     test_matrix = convert_to_matrix(filter_test, uni2id, bi2id, dim)
     dev_matrix = convert_to_matrix(filter_dev, uni2id, bi2id, dim)
-    return (train_matrix,train_y), (test_matrix,test_y), (dev_matrix,dev_y)
+    return (train_matrix,train_y), (test_matrix,test_y), (dev_matrix,dev_y),id2token
