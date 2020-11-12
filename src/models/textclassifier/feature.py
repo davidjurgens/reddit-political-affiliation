@@ -1,7 +1,8 @@
 import json
 from collections import Counter
-from tqdm import tqdm
+
 import numpy as np
+from tqdm import tqdm
 
 year_month = '2019-04'
 network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year_month + '_filtered.tsv'
@@ -56,7 +57,7 @@ def convert_to_matrix(raw_data, uni2id, bi2id, dim):
     return matrix
 
 
-def build_train_test_dev(user_words_dir, word_count_dir ,train, test, dev):
+def build_train_test_dev(user_words_dir, word_count_dir, train, test, dev):
     all_count = json.load(open(user_words_dir))
     print(len(all_count))
     filter_train, train_y = filter_data(all_count, train)
@@ -69,13 +70,13 @@ def build_train_test_dev(user_words_dir, word_count_dir ,train, test, dev):
     #         '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/month_users_words/all_month_word_counts.json',
     #         'w') as fp:
     #     json.dump(word_count, fp)
-    word_count=Counter(json.load(open(word_count_dir)))
+    word_count = Counter(json.load(open(word_count_dir)))
     sorted_count = word_count.most_common()
     print(len(sorted_count))
-    start, dim = 1000,200000
-    print("from", str(start),"to",str(start+dim))
+    start, dim = 1000, 200000
+    print("from", str(start), "to", str(start + dim))
     uni2id, bi2id = tokens2id(start, dim, sorted_count)
     train_matrix = convert_to_matrix(filter_train, uni2id, bi2id, dim)
     test_matrix = convert_to_matrix(filter_test, uni2id, bi2id, dim)
     dev_matrix = convert_to_matrix(filter_dev, uni2id, bi2id, dim)
-    return (train_matrix,train_y), (test_matrix,test_y), (dev_matrix,dev_y)
+    return (train_matrix, train_y), (test_matrix, test_y), (dev_matrix, dev_y)

@@ -12,8 +12,6 @@ sys.path.append('.')
 
 from src.data.make_dataset import build_dataset
 from src.models.word2vec.User2Subreddit import User2Subreddit
-from src.models.word2vec.predict_model import predict_user_affiliations, top_n_similar_embeddings, \
-    save_similar_embeddings_to_tsv
 from src.models.word2vec.train_settings import *
 
 from sklearn.metrics import auc, roc_curve

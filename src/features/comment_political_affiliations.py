@@ -1,12 +1,13 @@
-import re
-import glob
-import bz2
-import lzma
-import json
 import argparse
-import zstandard as zstd
-from json import JSONDecodeError
+import bz2
+import glob
+import json
+import lzma
+import re
 from collections import *
+from json import JSONDecodeError
+
+import zstandard as zstd
 
 DEM_PATTERN = "((i am|i'm) a (democrat|liberal)|i vote[d]?( for| for a)? (democrat|hillary|biden|obama|blue))"
 
