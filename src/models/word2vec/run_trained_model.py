@@ -1,9 +1,9 @@
 import torch
+from models.word2vec.User2Subreddit import User2Subreddit
 from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
-
 from tqdm import tqdm
-from models.word2vec.User2Subreddit import User2Subreddit
+
 from src.data.make_dataset import build_dataset
 
 # TODO: Move settings to argparse

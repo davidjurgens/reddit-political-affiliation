@@ -99,12 +99,16 @@ def read_comment_political_affiliations(files):
 
 
 def convert_affiliations_to_binary(user_to_politics):
+    dems, reps = 0, 0
     for user, politics in user_to_politics.items():
-        if politics == "Democrat":
+        if "democrat" in politics.strip().lower():
             user_to_politics[user] = 0
+            dems += 1
         else:
+            reps += 1
             user_to_politics[user] = 1
-
+    print("Number of democrats: {}".format(dems))
+    print("Number of republicans: {}".format(reps))
     return user_to_politics
 
 

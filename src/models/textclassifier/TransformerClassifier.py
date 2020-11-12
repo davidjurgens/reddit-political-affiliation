@@ -1,10 +1,7 @@
-import os
 import sys
 
 sys.path.append('/home/zbohan/projects/')
 from src.models.textclassifier.create_train_test_dev_all_months import get_file_handle
-from collections import defaultdict, Counter
-from src.data.make_dataset import read_flair_political_affiliations
 import json
 from sklearn.metrics import classification_report
 from json import JSONDecodeError
@@ -12,19 +9,18 @@ from tqdm import tqdm
 import torch
 import torch.optim as optim
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
-from pytorch_transformers import RobertaModel, RobertaTokenizer
+from pytorch_transformers import RobertaTokenizer
 from pytorch_transformers import RobertaForSequenceClassification, RobertaConfig
 import pandas as pd
 
 train_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/train.json'
 test_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/test.json'
 dev_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/dev.json'
-comments_dir='/shared/0/projects/reddit-political-affiliation/data/user-comments/'
-preparing=0
-test_mode=1
+comments_dir = '/shared/0/projects/reddit-political-affiliation/data/user-comments/'
+preparing = 0
+test_mode = 1
+
 
 def get_comments(file_pointer, ground_pol):
     text_list = []
@@ -48,7 +44,7 @@ def get_comments(file_pointer, ground_pol):
 def prepare_features(seq_1, max_seq_length=50,
                      zero_pad=True, include_CLS_token=True, include_SEP_token=True):
     ## Tokenzine Input
-    tokens = tokenizer.tokenize(seq_1)[0:max_seq_length-2]
+    tokens = tokenizer.tokenize(seq_1)[0:max_seq_length - 2]
     ## Initialize Tokens
     if include_CLS_token:
         tokens.insert(0, tokenizer.cls_token)
@@ -64,7 +60,7 @@ def prepare_features(seq_1, max_seq_length=50,
         while len(input_ids) < max_seq_length:
             input_ids.append(0)
             input_mask.append(0)
-    #print(torch.tensor(input_ids).shape)
+    # print(torch.tensor(input_ids).shape)
     return torch.tensor(input_ids), input_mask
 
 
@@ -83,18 +79,18 @@ class Intents(Dataset):
         return self.len
 
 
-def evaluate(model,data):
+def evaluate(model, data):
     correct = 0
     total = 0
-    y_pred=[]
-    y_true=[]
+    y_pred = []
+    y_true = []
     model.eval()
     for sent, label in tqdm(data):
         sent = sent.squeeze(1)
         if torch.cuda.is_available():
             sent = sent.cuda()
             label = label.cuda()
-        label=label.long()
+        label = label.long()
         output = model.forward(sent)[0]
         _, predicted = torch.max(output.data, 1)
         total += label.size(0)
@@ -104,32 +100,40 @@ def evaluate(model,data):
     accuracy = 100.00 * correct.numpy() / total
     #print('Iteration: {}. Loss: {}. Accuracy: {}%'.format(i, loss.item(), accuracy))
     print("Confusion Metrics \n", classification_report(y_true, y_pred))
-    return classification_report(y_true, y_pred,output_dict=True)['macro avg']['f1-score']
+    return classification_report(y_true, y_pred, output_dict=True)['macro avg']['f1-score']
+
 
 if __name__ == '__main__':
     train = json.load(open(train_dir))
     test = json.load(open(test_dir))
     dev = json.load(open(dev_dir))
+<<<<<<< HEAD
     year_month='2019-05'
     dv="cuda:7"
     load_from=14
+=======
+    year_month = '2019-05'
+    dv = "cuda:1"
+    load_from = 14
+>>>>>>> ec0ce47778cee10fc3f317693568f5d28cb1222b
     if preparing:
-        file_path = '/shared/2/datasets/reddit-dump-all/RC/RC_' + year_month + ('.xz' if year_month[-1] < '7' else '.zst')
+        file_path = '/shared/2/datasets/reddit-dump-all/RC/RC_' + year_month + (
+            '.xz' if year_month[-1] < '7' else '.zst')
         print(file_path)
-        f= get_file_handle(file_path)
-        train_data=get_comments(f,train)
+        f = get_file_handle(file_path)
+        train_data = get_comments(f, train)
         f = get_file_handle(file_path)
         test_data = get_comments(f, test)
         f = get_file_handle(file_path)
         dev_data = get_comments(f, dev)
-        train_data.to_csv(comments_dir+year_month+'/train.csv',sep='\t')
-        test_data.to_csv(comments_dir+year_month+'/test.csv',sep='\t')
-        dev_data.to_csv(comments_dir+year_month+'/dev.csv',sep='\t')
+        train_data.to_csv(comments_dir + year_month + '/train.csv', sep='\t')
+        test_data.to_csv(comments_dir + year_month + '/test.csv', sep='\t')
+        dev_data.to_csv(comments_dir + year_month + '/dev.csv', sep='\t')
 
     else:
-        train_data = pd.read_csv(comments_dir+year_month+'/train.csv', index_col=0, sep='\t',engine='python')
-        test_data = pd.read_csv(comments_dir+year_month+'/test.csv', index_col=0, sep='\t')
-        dev_data = pd.read_csv(comments_dir+year_month+'/dev.csv', index_col=0, sep='\t')
+        train_data = pd.read_csv(comments_dir + year_month + '/train.csv', index_col=0, sep='\t', engine='python')
+        test_data = pd.read_csv(comments_dir + year_month + '/test.csv', index_col=0, sep='\t')
+        dev_data = pd.read_csv(comments_dir + year_month + '/dev.csv', index_col=0, sep='\t')
         print(train_data.shape, test_data.shape, dev_data.shape)
 
         device = torch.device(dv)
@@ -148,7 +152,8 @@ if __name__ == '__main__':
 
         if not test_mode:
             if load_from != -1:
-                model.load_state_dict(torch.load(comments_dir + year_month + "/"+ str(load_from) + '.pt', map_location=device))
+                model.load_state_dict(
+                    torch.load(comments_dir + year_month + "/" + str(load_from) + '.pt', map_location=device))
                 print("load from" + str(load_from) + ".pt")
             model.cuda()
 
@@ -160,42 +165,46 @@ if __name__ == '__main__':
             max_epochs = 50
 
             try:
-                best=0
+                best = 0
                 for epoch in range(max_epochs):
                     model = model.train()
                     print("EPOCH -- {}".format(epoch))
-                    for i, (sent, label) in tqdm(enumerate(train_loader),total=iter_length):
+                    for i, (sent, label) in tqdm(enumerate(train_loader), total=iter_length):
                         optimizer.zero_grad()
                         sent = sent.squeeze(1)
                         if torch.cuda.is_available():
                             sent = sent.cuda()
                             label = label.cuda()
-                        label=label.long()
+                        label = label.long()
                         output = model.forward(sent)[0]
                         _, predicted = torch.max(output, 1)
                         loss = loss_function(output, label)
                         loss.backward()
                         optimizer.step()
 
-                        if (i+1)%100==0:
+                        if (i + 1) % 100 == 0:
                             print(loss)
 
                     print("Evaluation on dev set:")
-                    mc=evaluate(model,dev_loader)
-                    if mc>best:
-                        print("Updating Best Score:",str(mc), "saving model...")
-                        torch.save(model.state_dict(), comments_dir + year_month + "/" + str(epoch + load_from + 1) + ".pt")
-                        best=mc
+                    mc = evaluate(model, dev_loader)
+                    if mc > best:
+                        print("Updating Best Score:", str(mc), "saving model...")
+                        torch.save(model.state_dict(),
+                                   comments_dir + year_month + "/" + str(epoch + load_from + 1) + ".pt")
+                        best = mc
 
             except KeyboardInterrupt:
                 torch.save(model.state_dict(), comments_dir + year_month + "/" + "finished.pt")
                 print("Evaluation on test set:")
-                mc=evaluate(model,test_loader)
-            print("Evaluation on test set:")
-            mc=evaluate(model,test_loader)
-        else:
-            model.load_state_dict(torch.load(comments_dir+year_month+"/17.pt", map_location=device))
-            model.cuda()
+                mc = evaluate(model, test_loader)
             print("Evaluation on test set:")
             mc = evaluate(model, test_loader)
-
+        else:
+<<<<<<< HEAD
+            model.load_state_dict(torch.load(comments_dir+year_month+"/17.pt", map_location=device))
+            model.cuda()
+=======
+            model.load_state_dict(torch.load(comments_dir + year_month + "/17.pt", map_location=device))
+>>>>>>> ec0ce47778cee10fc3f317693568f5d28cb1222b
+            print("Evaluation on test set:")
+            mc = evaluate(model, test_loader)

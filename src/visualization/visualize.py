@@ -1,5 +1,5 @@
-import networkx as nx
 import matplotlib as mpl
+import networkx as nx
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import minmax_scale
 

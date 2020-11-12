@@ -1,5 +1,4 @@
 import random
-import pickle
 from collections import defaultdict
 
 import numpy as np

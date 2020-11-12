@@ -1,11 +1,12 @@
-import sys
-import csv
 import bz2
-import lzma
+import csv
 import json
-import zstandard as zstd
+import lzma
+import sys
 from collections import defaultdict
 from json import JSONDecodeError
+
+import zstandard as zstd
 
 """  Script to parse out user flair information from Reddit comments and posts 
      
