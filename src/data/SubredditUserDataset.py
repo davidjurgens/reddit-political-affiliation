@@ -89,7 +89,7 @@ class SubredditUserDataset(Dataset):
 
         print("Loading user subreddits")
         user_subreddits = defaultdict(list)
-        with open(path + 'user_subreddits.tsv', 'r') as f:
+        with open(path + '_user_subreddits.tsv', 'r') as f:
             for line in f:
                 user, subreddit = line.strip().split('\t')
                 user_subreddits[user].append(subreddit)

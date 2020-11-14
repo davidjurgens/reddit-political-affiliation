@@ -70,6 +70,7 @@ def read_flair_political_affiliations(files):
         with open(fname, 'rt') as f:
             for line in f:
                 user, politics, freq = line.split('\t')
+                politics = politics.strip().lower()
                 user_to_politic_counts[user][politics] += int(freq)
 
     print("User to politic counts: " + str(len(user_to_politic_counts)))
@@ -92,7 +93,7 @@ def read_comment_political_affiliations(files):
         with open(fname, 'r') as f:
             for line in f:
                 user, politics = line.split('\t')
-                user_to_politics[user] = politics
+                user_to_politics[user] = politics.strip().lower()
 
     print('Saw political affiliations for %d users from comments' % len(user_to_politics))
     return convert_affiliations_to_binary(user_to_politics)
@@ -100,13 +101,13 @@ def read_comment_political_affiliations(files):
 
 def convert_affiliations_to_binary(user_to_politics):
     dems, reps = 0, 0
+
     for user, politics in user_to_politics.items():
-        if "democrat" in politics.strip().lower():
+        if politics == "democrat":
             user_to_politics[user] = 0
-            dems += 1
-        else:
-            reps += 1
+        elif politics == "republican":
             user_to_politics[user] = 1
+
     print("Number of democrats: {}".format(dems))
     print("Number of republicans: {}".format(reps))
     return user_to_politics
