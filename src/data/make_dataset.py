@@ -105,8 +105,10 @@ def convert_affiliations_to_binary(user_to_politics):
     for user, politics in user_to_politics.items():
         if politics == "democrat":
             user_to_politics[user] = 0
+            dems += 1
         elif politics == "republican":
             user_to_politics[user] = 1
+            reps += 1
 
     print("Number of democrats: {}".format(dems))
     print("Number of republicans: {}".format(reps))
