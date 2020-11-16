@@ -33,11 +33,7 @@ def parse_comment_affiliations(file_path):
         try:
             submission = json.loads(file_pointer.readline().strip())
             username = submission['author']
-            text = ""
-            if "body" in submission:
-                text += submission['body'].lower()
-            if "title" in submission:
-                text += " " + submission['title'].lower()
+            text = get_submission_text(submission)
 
             if re.findall(DEM_PATTERN, text):
                 dem_count += 1
@@ -122,11 +118,7 @@ def parse_zst_comment_affiliations(filename):
                     try:
                         submission = json.loads(line)
                         username = submission['author']
-                        text = ""
-                        if "body" in submission:
-                            text += submission['body'].lower()
-                        if "title" in submission:
-                            text += " " + submission['title'].lower()
+                        text = get_submission_text(submission)
 
                         if re.findall(DEM_PATTERN, text):
                             dem_count += 1
@@ -159,6 +151,15 @@ def user_politics_to_tsv(user_politics, out_file):
     with open(out_file, 'w') as f:
         for user, political_party in user_politics.items():
             f.write("{}\t{}\n".format(user, political_party))
+
+
+def get_submission_text(sub):
+    text = ""
+    if "body" in sub:
+        text += sub['body'].lower()
+    if "title" in sub:
+        text += " " + sub['title'].lower()
+    return text
 
 
 if __name__ == '__main__':
