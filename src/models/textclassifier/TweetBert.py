@@ -12,18 +12,26 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer,BertForSequenceClassification
 from TransformerClassifier import downsampling,evaluate
 
-test_mode=0
+test_mode=1
 
-def prepare_features(line,max_length=32):
-    input_ids = tokenizer.encode(line)
-    input_ids = input_ids[0:max_length-1]
-    while(len(input_ids)<max_length-1):
-        input_ids.append(0)
-    input_ids.append(2)
-    return torch.tensor(input_ids)
+def prepare_features(line,max_length=50):
+    # input_ids = tokenizer.encode(line)
+    # input_ids = input_ids[0:max_length - 1]
+    # while (len(input_ids) < max_length - 1):
+    #     input_ids.append(0)
+    # input_ids.append(2)
+    # return torch.tensor(input_ids)
+    tokens=tokenizer.tokenize(line)[0:max_length-2]
+    tokens=[tokenizer.cls_token]+tokens
+    tokens.append(tokenizer.sep_token)
+
+    while (len(tokens) < max_length):
+        tokens.append(tokenizer.pad_token)
+    input_ids = torch.tensor(tokenizer.convert_tokens_to_ids(tokens))
+    return input_ids
 
 class Intents(Dataset):
     def __init__(self, dataframe):
@@ -42,15 +50,12 @@ class Intents(Dataset):
 class BertTune(nn.Module):
     def __init__(self, BertModel,max_length=32):
         super(BertTune, self).__init__()
-        #self.tokenizer=tokenizer
         self.BertModel=BertModel
         self.emb_dimension=768
         self.max_length=max_length
         self.lin1=nn.Linear(self.emb_dimension,2)
-        #self.lin2=nn.Linear(1024,512)
-        #self.lin3=nn.Linear(512,2)
         self.relu=nn.Tanh()
-        self.dropout=nn.Dropout(0.5)
+        #self.dropout=nn.Dropout(0.5)
         self.maxpool=nn.MaxPool1d(self.max_length)
         self.init_emb()
 
@@ -98,7 +103,7 @@ if __name__ == '__main__':
     dev = json.load(open(dev_dir))
 
     year_month='2019-05'
-    dv="cuda:7"
+    dv="cuda:4"
     load_from=-1
 
     train_data = pd.read_csv(comments_dir + year_month + '/train.csv', index_col=0, sep='\t', engine='python')
@@ -134,7 +139,7 @@ if __name__ == '__main__':
         learning_rate = 1e-05
         optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
         iter_length = len(train_loader)
-        max_epochs = 50
+        max_epochs = 10
         try:
             best = 0
             for epoch in range(max_epochs):
@@ -170,9 +175,7 @@ if __name__ == '__main__':
         print("Evaluation on test set:")
         mc = evaluate(model, test_loader)
     else:
-        model.load_state_dict(torch.load(comments_dir+year_month+"/BertTweet_.pt", map_location=device))
+        model.load_state_dict(torch.load(comments_dir+year_month+"/BertTweet_3.pt", map_location=device))
         model.cuda()
-        model.load_state_dict(torch.load(comments_dir + year_month + "/BertTweet_.pt", map_location=device))
-
         print("Evaluation on test set:")
         mc = evaluate(model, test_loader)

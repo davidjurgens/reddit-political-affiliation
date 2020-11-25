@@ -60,12 +60,13 @@ def prepare_features(seq_1, max_seq_length=50,
         tokens.append(tokenizer.sep_token)
 
     input_ids = tokenizer.convert_tokens_to_ids(tokens)
+    pad_id=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0]
     ## Input Mask
     input_mask = [1] * len(input_ids)
     ## Zero-pad sequence lenght
     if zero_pad:
         while len(input_ids) < max_seq_length:
-            input_ids.append(0)
+            input_ids.append(pad_id)
             input_mask.append(0)
     # print(torch.tensor(input_ids).shape)
     return torch.tensor(input_ids), input_mask
@@ -116,7 +117,7 @@ if __name__ == '__main__':
     dev = json.load(open(dev_dir))
 
     year_month='2019-05'
-    dv="cuda:7"
+    dv="cuda:4"
     load_from=-1
 
     if preparing:
@@ -167,12 +168,12 @@ if __name__ == '__main__':
             optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
             iter_length = len(train_loader)
 
-            max_epochs = 50
+            max_epochs = 10
 
             try:
                 best = 0
                 for epoch in range(max_epochs):
-                    model = model.train()
+                    model.train()
                     print("EPOCH -- {}".format(epoch))
                     for i, (sent, label) in tqdm(enumerate(train_loader), total=iter_length):
                         optimizer.zero_grad()
@@ -205,9 +206,8 @@ if __name__ == '__main__':
             print("Evaluation on test set:")
             mc = evaluate(model, test_loader)
         else:
-            model.load_state_dict(torch.load(comments_dir+year_month+"/downsampling_3.pt", map_location=device))
             model.cuda()
-            model.load_state_dict(torch.load(comments_dir + year_month + "/downsampling_3.pt", map_location=device))
+            model.load_state_dict(torch.load(comments_dir + year_month + "/17.pt", map_location=device))
 
             print("Evaluation on test set:")
             mc = evaluate(model, test_loader)
