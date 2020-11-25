@@ -1,18 +1,19 @@
 import sys
 
 sys.path.append('/home/zbohan/projects/')
-from src.models.textclassifier.create_train_test_dev_all_months import get_file_handle
+#from src.models.textclassifier.create_train_test_dev_all_months import get_file_handle
 import json
 from sklearn.metrics import classification_report
+from sklearn.utils import resample
 from json import JSONDecodeError
 from tqdm import tqdm
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
+import pandas as pd
 from pytorch_transformers import RobertaTokenizer
 from pytorch_transformers import RobertaForSequenceClassification, RobertaConfig
-import pandas as pd
 
 train_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/train.json'
 test_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/test.json'
@@ -21,6 +22,12 @@ comments_dir = '/shared/0/projects/reddit-political-affiliation/data/user-commen
 preparing = 0
 test_mode = 1
 
+
+def downsampling(data):
+    data_majority = data[data.Label == 1]
+    data_minority = data[data.Label == 0]
+    majority_down_sampled=resample(data_majority,n_samples=len(data_minority), random_state=42)
+    return pd.concat([majority_down_sampled, data_minority])
 
 def get_comments(file_pointer, ground_pol):
     text_list = []
@@ -110,11 +117,8 @@ if __name__ == '__main__':
 
     year_month='2019-05'
     dv="cuda:7"
-    load_from=14
+    load_from=-1
 
-    year_month = '2019-05'
-    dv = "cuda:1"
-    load_from = 14
     if preparing:
         file_path = '/shared/2/datasets/reddit-dump-all/RC/RC_' + year_month + (
             '.xz' if year_month[-1] < '7' else '.zst')
@@ -131,6 +135,8 @@ if __name__ == '__main__':
 
     else:
         train_data = pd.read_csv(comments_dir + year_month + '/train.csv', index_col=0, sep='\t', engine='python')
+        train_data=downsampling(train_data)
+        print(train_data.Label.value_counts())
         test_data = pd.read_csv(comments_dir + year_month + '/test.csv', index_col=0, sep='\t')
         dev_data = pd.read_csv(comments_dir + year_month + '/dev.csv', index_col=0, sep='\t')
         print(train_data.shape, test_data.shape, dev_data.shape)
@@ -189,19 +195,19 @@ if __name__ == '__main__':
                     if mc > best:
                         print("Updating Best Score:", str(mc), "saving model...")
                         torch.save(model.state_dict(),
-                                   comments_dir + year_month + "/" + str(epoch + load_from + 1) + ".pt")
+                                   comments_dir + year_month + "/downsampling_" + str(epoch + load_from + 1) + ".pt")
                         best = mc
 
             except KeyboardInterrupt:
-                torch.save(model.state_dict(), comments_dir + year_month + "/" + "finished.pt")
+                torch.save(model.state_dict(), comments_dir + year_month + "/downsampling_" + "finished.pt")
                 print("Evaluation on test set:")
                 mc = evaluate(model, test_loader)
             print("Evaluation on test set:")
             mc = evaluate(model, test_loader)
         else:
-            model.load_state_dict(torch.load(comments_dir+year_month+"/17.pt", map_location=device))
+            model.load_state_dict(torch.load(comments_dir+year_month+"/downsampling_3.pt", map_location=device))
             model.cuda()
-            model.load_state_dict(torch.load(comments_dir + year_month + "/17.pt", map_location=device))
+            model.load_state_dict(torch.load(comments_dir + year_month + "/downsampling_3.pt", map_location=device))
 
             print("Evaluation on test set:")
             mc = evaluate(model, test_loader)
