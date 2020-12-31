@@ -6,7 +6,7 @@ import io
 import sys
 
 sys.path.append('/home/zbohan/projects/')
-from src.data.make_dataset import read_flair_political_affiliations, dict_random_split
+from src.data.word2vec.make_dataset import read_flair_political_affiliations, dict_random_split
 from src.models.textclassifier.feature import build_train_test_dev
 import glob
 import json

@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.data.make_dataset import build_dataset
+from src.data.word2vec.make_dataset import build_dataset
 
 # TODO: Move settings to argparse
 # So many paths....

@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import random_split
 from tqdm import tqdm
 
-from src.data.SubredditUserDataset import SubredditUserDataset
+from src.data.word2vec.SubredditUserDataset import SubredditUserDataset
 
 
 def build_dataset(network_path, flair_directory, comment_directory, validation_split=0.1, max_users=-1):

@@ -10,7 +10,7 @@ from tqdm import tqdm
 sys.path.append('../..')  # make it work in the root directory
 sys.path.append('.')
 
-from src.data.make_dataset import build_dataset
+from src.data.word2vec.make_dataset import build_dataset
 from src.models.word2vec.User2Subreddit import User2Subreddit
 from src.models.word2vec.train_settings import *
 
