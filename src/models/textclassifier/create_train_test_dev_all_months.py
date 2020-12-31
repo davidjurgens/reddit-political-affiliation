@@ -129,27 +129,28 @@ if __name__ == '__main__':
         print(count_0 / len(train), 1 - count_0 / len(train))
         print(len(train), len(test), len(dev))
 
-        (train_matrix,train_y),(test_matrix,test_y),(dev_matrix,dev_y),id2token=build_train_test_dev(all_count_dir,word_count_dir,train,test,dev)
-        print(train_matrix.shape,test_matrix.shape,dev_matrix.shape)
+        (train_matrix, train_y), (test_matrix, test_y), (dev_matrix, dev_y), id2token = build_train_test_dev(
+            all_count_dir, word_count_dir, train, test, dev)
+        print(train_matrix.shape, test_matrix.shape, dev_matrix.shape)
 
         print("Training...patience...")
-        clf = LogisticRegression(solver='lbfgs', max_iter=1000, class_weight={0:1,1:6.4},n_jobs=8).fit(train_matrix, train_y)
+        clf = LogisticRegression(solver='lbfgs', max_iter=1000, class_weight={0: 1, 1: 6.4}, n_jobs=8).fit(train_matrix,
+                                                                                                           train_y)
         print("Done, let's see!!")
 
-        pre_y=clf.predict(test_matrix)
-        print("Confusion Metrics \n", classification_report(test_y,pre_y))
+        pre_y = clf.predict(test_matrix)
+        print("Confusion Metrics \n", classification_report(test_y, pre_y))
 
-        coef=clf.coef_
-        #print(coef)
+        coef = clf.coef_
+        # print(coef)
         print("sorting coef...")
-        arg_sort=np.argsort(-np.absolute(coef[0]))
-        high_weight_word=[]
-        hww=100
+        arg_sort = np.argsort(-np.absolute(coef[0]))
+        high_weight_word = []
+        hww = 100
         for i in range(hww):
             high_weight_word.append(id2token[arg_sort[i]])
-        print(hww,"highest weighted word:")
+        print(hww, "highest weighted word:")
         print(high_weight_word)
-
 
         with open('/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/coef.pkl', 'wb') as file:
             pickle.dump(clf, file)

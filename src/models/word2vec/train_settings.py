@@ -44,7 +44,7 @@ if args.flairs:
     flair_directory = args.flairs
 else:
     flair_directory = "/shared/0/projects/reddit-political-affiliation/data/flair-affiliations/" + year_month + ".tsv"
-    #flair_directory = "src/data/" + year_month + ".tsv"
+    # flair_directory = "src/data/" + year_month + ".tsv"
 
 comment_directory = args.comments + "RC_" + year_month + ".tsv"
 print(comment_directory)

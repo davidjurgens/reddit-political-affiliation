@@ -25,7 +25,7 @@ def tokens2id(start, dim, sorted_count):
     uni2id = {}
     bi2id = {}
     count = 0
-    id2token={}
+    id2token = {}
     for idx, (k, v) in enumerate(sorted_count):
         if count == dim:
             break
@@ -34,9 +34,9 @@ def tokens2id(start, dim, sorted_count):
                 bi2id[k] = count
             else:
                 uni2id[k] = count
-            id2token[count]=k
+            id2token[count] = k
             count += 1
-    return uni2id, bi2id,id2token
+    return uni2id, bi2id, id2token
 
 
 def convert_to_matrix(raw_data, uni2id, bi2id, dim):

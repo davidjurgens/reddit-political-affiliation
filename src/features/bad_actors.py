@@ -106,6 +106,18 @@ def get_submission_text(sub):
     return text
 
 
+def read_in_existing_politics(user_politics, in_file):
+    print("Reading in existing user politics from file: {}".format(in_file))
+    with open(in_file) as json_file:
+        results = json.load(json_file)
+
+    for user, political_data in results.items():
+        user_politics[user] = political_data
+
+    print("Total number of existing user politics is: {}".format(len(user_politics)))
+    return user_politics
+
+
 if __name__ == '__main__':
     files = glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
@@ -115,8 +127,9 @@ if __name__ == '__main__':
 
     user_politics = defaultdict(list)
     out_path = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/politics.json'
+    user_politics = read_in_existing_politics(user_politics, out_path)
 
-    for fname in files:
+    for fname in files[19:]:
         print("Starting on file: {}".format(fname))
         extension = fname.split('.')[-1]
         if extension == "zst":

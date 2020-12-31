@@ -98,7 +98,7 @@ def evaluate(model, data):
         y_pred.extend(list(predicted.cpu().numpy()))
         y_true.extend(list(label.cpu().numpy()))
     accuracy = 100.00 * correct.numpy() / total
-    #print('Iteration: {}. Loss: {}. Accuracy: {}%'.format(i, loss.item(), accuracy))
+    # print('Iteration: {}. Loss: {}. Accuracy: {}%'.format(i, loss.item(), accuracy))
     print("Confusion Metrics \n", classification_report(y_true, y_pred))
     return classification_report(y_true, y_pred, output_dict=True)['macro avg']['f1-score']
 
@@ -108,9 +108,9 @@ if __name__ == '__main__':
     test = json.load(open(test_dir))
     dev = json.load(open(dev_dir))
 
-    year_month='2019-05'
-    dv="cuda:7"
-    load_from=14
+    year_month = '2019-05'
+    dv = "cuda:7"
+    load_from = 14
 
     year_month = '2019-05'
     dv = "cuda:1"
@@ -199,7 +199,7 @@ if __name__ == '__main__':
             print("Evaluation on test set:")
             mc = evaluate(model, test_loader)
         else:
-            model.load_state_dict(torch.load(comments_dir+year_month+"/17.pt", map_location=device))
+            model.load_state_dict(torch.load(comments_dir + year_month + "/17.pt", map_location=device))
             model.cuda()
             model.load_state_dict(torch.load(comments_dir + year_month + "/17.pt", map_location=device))
 
