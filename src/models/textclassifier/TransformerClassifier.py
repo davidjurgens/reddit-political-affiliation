@@ -4,15 +4,16 @@ sys.path.append('/home/zbohan/projects/')
 from src.models.textclassifier.create_train_test_dev_all_months import get_file_handle
 import json
 from sklearn.metrics import classification_report
+from sklearn.utils import resample
 from json import JSONDecodeError
 from tqdm import tqdm
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
+import pandas as pd
 from pytorch_transformers import RobertaTokenizer
 from pytorch_transformers import RobertaForSequenceClassification, RobertaConfig
-import pandas as pd
 
 train_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/train.json'
 test_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/test.json'
@@ -20,6 +21,13 @@ dev_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg
 comments_dir = '/shared/0/projects/reddit-political-affiliation/data/user-comments/'
 preparing = 0
 test_mode = 1
+
+
+def downsampling(data):
+    data_majority = data[data.Label == 1]
+    data_minority = data[data.Label == 0]
+    majority_down_sampled = resample(data_majority, n_samples=len(data_minority), random_state=42)
+    return pd.concat([majority_down_sampled, data_minority])
 
 
 def get_comments(file_pointer, ground_pol):
@@ -41,11 +49,10 @@ def get_comments(file_pointer, ground_pol):
     return pd.DataFrame(d)
 
 
-def prepare_features(seq_1, max_seq_length=50,
-                     zero_pad=True, include_CLS_token=True, include_SEP_token=True):
-    ## Tokenzine Input
+def prepare_features(seq_1, max_seq_length=50, zero_pad=True, include_CLS_token=True, include_SEP_token=True):
+    # Tokenzine Input
     tokens = tokenizer.tokenize(seq_1)[0:max_seq_length - 2]
-    ## Initialize Tokens
+    # Initialize Tokens
     if include_CLS_token:
         tokens.insert(0, tokenizer.cls_token)
 
@@ -53,12 +60,13 @@ def prepare_features(seq_1, max_seq_length=50,
         tokens.append(tokenizer.sep_token)
 
     input_ids = tokenizer.convert_tokens_to_ids(tokens)
-    ## Input Mask
+    pad_id = tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0]
+    # Input Mask
     input_mask = [1] * len(input_ids)
-    ## Zero-pad sequence lenght
+    # Zero-pad sequence lenght
     if zero_pad:
         while len(input_ids) < max_seq_length:
-            input_ids.append(0)
+            input_ids.append(pad_id)
             input_mask.append(0)
     # print(torch.tensor(input_ids).shape)
     return torch.tensor(input_ids), input_mask
@@ -112,9 +120,6 @@ if __name__ == '__main__':
     dv = "cuda:7"
     load_from = 14
 
-    year_month = '2019-05'
-    dv = "cuda:1"
-    load_from = 14
     if preparing:
         file_path = '/shared/2/datasets/reddit-dump-all/RC/RC_' + year_month + (
             '.xz' if year_month[-1] < '7' else '.zst')
@@ -131,6 +136,8 @@ if __name__ == '__main__':
 
     else:
         train_data = pd.read_csv(comments_dir + year_month + '/train.csv', index_col=0, sep='\t', engine='python')
+        train_data = downsampling(train_data)
+        print(train_data.Label.value_counts())
         test_data = pd.read_csv(comments_dir + year_month + '/test.csv', index_col=0, sep='\t')
         dev_data = pd.read_csv(comments_dir + year_month + '/dev.csv', index_col=0, sep='\t')
         print(train_data.shape, test_data.shape, dev_data.shape)
@@ -161,12 +168,12 @@ if __name__ == '__main__':
             optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
             iter_length = len(train_loader)
 
-            max_epochs = 50
+            max_epochs = 10
 
             try:
                 best = 0
                 for epoch in range(max_epochs):
-                    model = model.train()
+                    model.train()
                     print("EPOCH -- {}".format(epoch))
                     for i, (sent, label) in tqdm(enumerate(train_loader), total=iter_length):
                         optimizer.zero_grad()
@@ -189,11 +196,11 @@ if __name__ == '__main__':
                     if mc > best:
                         print("Updating Best Score:", str(mc), "saving model...")
                         torch.save(model.state_dict(),
-                                   comments_dir + year_month + "/" + str(epoch + load_from + 1) + ".pt")
+                                   comments_dir + year_month + "/downsampling_" + str(epoch + load_from + 1) + ".pt")
                         best = mc
 
             except KeyboardInterrupt:
-                torch.save(model.state_dict(), comments_dir + year_month + "/" + "finished.pt")
+                torch.save(model.state_dict(), comments_dir + year_month + "/downsampling_" + "finished.pt")
                 print("Evaluation on test set:")
                 mc = evaluate(model, test_loader)
             print("Evaluation on test set:")
