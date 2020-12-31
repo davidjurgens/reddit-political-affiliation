@@ -132,5 +132,5 @@ if __name__ == '__main__':
         else:
             samples.extend(get_samples(file, fname))
 
-    df = pd.DataFrame(samples, columns=["file", "politics", "comment", "created_utc"])
-    df.to_csv(out_file)
+        df = pd.DataFrame(samples, columns=["file", "politics", "comment", "created_utc"])
+        df.to_csv(out_file)
