@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
     samples = []
 
-    for file in files[:2]:
+    for file in files:
         print("Starting on file: {}".format(file))
         extension = file.split('.')[-1]
         fname = parse_name_from_filepath(file)
