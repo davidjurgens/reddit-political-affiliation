@@ -1,13 +1,9 @@
 import argparse
-import bz2
 import glob
-import json
-import lzma
 import re
 from collections import *
-from json import JSONDecodeError
 
-import zstandard as zstd
+from src.data.date_helper import read_submissions
 
 DEM_PATTERN = "((i am|i'm) a (democrat|liberal)|i vote[d]?( for| for a)? (democrat|hillary|biden|obama|blue))"
 
@@ -26,49 +22,29 @@ ANTI_DEM_PATTERN = "(i (hate|despise) (liberals|progressives|democrats|left-wing
 
 
 def parse_comment_affiliations(file_path):
-    file_pointer = get_file_handle(file_path)
     user_politics = defaultdict(list)
     dem_count, anti_rep_count, rep_count, anti_dem_count = 0, 0, 0, 0
-    for count, line in enumerate(file_pointer):
-        try:
-            submission = json.loads(file_pointer.readline().strip())
-            username = submission['author']
-            text = get_submission_text(submission)
+    for submission in read_submissions(file_path):
+        username = submission['author']
+        text = get_submission_text(submission)
 
-            if re.findall(DEM_PATTERN, text):
-                dem_count += 1
-                user_politics[username].append("Democrat")
-            elif re.findall(ANTI_REP_PATTERN, text):
-                anti_rep_count += 1
-                user_politics[username].append("Democrat")
-            elif re.findall(REP_PATTERN, text):
-                rep_count += 1
-                user_politics[username].append("Republican")
-            elif re.findall(ANTI_DEM_PATTERN, text):
-                anti_dem_count += 1
-                user_politics[username].append("Republican")
-
-        except (JSONDecodeError, AttributeError) as e:
-            print("Failed to parse line: {} with error: {}".format(line, e))
-
-        if count % 1000000 == 0 and count > 0:
-            print("Completed {} lines. Number of political users so far: {}".format(count, len(user_politics)))
+        if re.findall(DEM_PATTERN, text):
+            dem_count += 1
+            user_politics[username].append("Democrat")
+        elif re.findall(ANTI_REP_PATTERN, text):
+            anti_rep_count += 1
+            user_politics[username].append("Democrat")
+        elif re.findall(REP_PATTERN, text):
+            rep_count += 1
+            user_politics[username].append("Republican")
+        elif re.findall(ANTI_DEM_PATTERN, text):
+            anti_dem_count += 1
+            user_politics[username].append("Republican")
 
     print("File completed! Total political users found: {}".format(len(user_politics)))
     print("Democrat matches: {}. Anti-Republican matches: {}. Republican matches: {}. Anti-Democrat matches: {}"
           .format(dem_count, anti_rep_count, rep_count, anti_dem_count))
     return user_politics
-
-
-def get_file_handle(file_path):
-    ext = file_path.split('.')[-1]
-
-    if ext == "bz2":
-        return bz2.open(file_path)
-    elif ext == "xz":
-        return lzma.open(file_path)
-
-    raise AssertionError("Invalid extension for " + file_path + ". Expecting bz2 or xz file")
 
 
 def handle_bad_actors(user_politics, out_file):
@@ -98,52 +74,6 @@ def parse_name_from_filepath(filepath):
     name = filepath.rsplit('/', 1)[-1]
     # Replace the extension with TSV
     return name.rsplit('.', 1)[0]
-
-
-def parse_zst_comment_affiliations(filename):
-    user_politics = defaultdict(list)
-    dem_count, anti_rep_count, rep_count, anti_dem_count, count = 0, 0, 0, 0, 0
-
-    with open(filename, 'rb') as f:
-        dctx = zstd.ZstdDecompressor()
-        with dctx.stream_reader(f) as reader:
-            while True:
-                chunk = reader.read(1000000000)  # Read in 1GB at a time
-                if not chunk:
-                    break
-
-                string_data = chunk.decode('utf-8')
-                lines = string_data.split("\n")
-                for i, line in enumerate(lines[:-1]):
-                    try:
-                        submission = json.loads(line)
-                        username = submission['author']
-                        text = get_submission_text(submission)
-
-                        if re.findall(DEM_PATTERN, text):
-                            dem_count += 1
-                            user_politics[username].append("Democrat")
-                        elif re.findall(ANTI_REP_PATTERN, text):
-                            anti_rep_count += 1
-                            user_politics[username].append("Democrat")
-                        elif re.findall(REP_PATTERN, text):
-                            rep_count += 1
-                            user_politics[username].append("Republican")
-                        elif re.findall(ANTI_DEM_PATTERN, text):
-                            anti_dem_count += 1
-                            user_politics[username].append("Republican")
-                    except Exception as e:
-                        print("Failed to parse line: {} with error: {}".format(line, e))
-
-                    count += 1
-                    if count % 1000000 == 0 and count > 0:
-                        print("Completed {} lines for file: {}. Number of political users so far: {}"
-                              .format(count, filename, len(user_politics)))
-
-    print("File completed! Total political users found: {}".format(len(user_politics)))
-    print("Democrat matches: {}. Anti-Republican matches: {}. Republican matches: {}. Anti-Democrat matches: {}"
-          .format(dem_count, anti_rep_count, rep_count, anti_dem_count))
-    return user_politics
 
 
 def user_politics_to_tsv(user_politics, out_file):
@@ -176,11 +106,7 @@ if __name__ == '__main__':
 
     for file in files:
         print("Starting on file: {}".format(file))
-        extension = file.split('.')[-1]
-        if extension == "zst":
-            user_politics = parse_zst_comment_affiliations(file)
-        else:
-            user_politics = parse_comment_affiliations(file)
+        user_politics = parse_comment_affiliations(file)
 
         fname = parse_name_from_filepath(file)
         out_file_actors = args.out_bad_actors + fname + ".tsv"

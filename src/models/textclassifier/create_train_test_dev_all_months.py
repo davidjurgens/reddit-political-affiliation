@@ -1,27 +1,26 @@
-# 每月的ground——pol load进来
-# split them all
-# 在所有month上dump data然后save 大userwords
-
-import io
-import sys
-
-sys.path.append('/home/zbohan/projects/')
-from src.data.word2vec.make_dataset import read_flair_political_affiliations, dict_random_split
-from src.models.textclassifier.feature import build_train_test_dev
 import glob
 import json
-from json import JSONDecodeError
-import bz2
-import lzma
-import zstandard as zstd
+import pickle
+import sys
 from collections import Counter, defaultdict
+
+import numpy as np
 from nltk import word_tokenize
 from nltk.util import ngrams
-import pickle
-import numpy as np
-
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
+
+sys.path.append('/home/zbohan/projects/')
+
+from src.data.date_helper import read_submissions
+from src.data.word2vec.make_dataset import read_flair_political_affiliations, dict_random_split
+from src.models.textclassifier.feature import build_train_test_dev
+
+"""
+    每月的ground——pol load进来
+    split them all
+    在所有month上dump data然后save 大userwords
+"""
 
 preparing_data = 0
 
@@ -31,51 +30,27 @@ def save_data(path, data_dict):
         json.dump(data_dict, fp)
 
 
-def get_file_handle(file_path):
-    ext = file_path.split('.')[-1]
-
-    if ext == "bz2":
-        return bz2.open(file_path)
-    elif ext == "xz":
-        return lzma.open(file_path)
-    elif ext == "zst":
-        f = open(file_path, 'rb')
-        dctx = zstd.ZstdDecompressor()
-        stream_reader = dctx.stream_reader(f)
-        text_stream = io.TextIOWrapper(stream_reader, encoding='utf-8')
-        return text_stream
-
-    raise AssertionError("Invalid extension for " + file_path + ". Expecting bz2 or xz file")
-
-
-def get_word_frequencies(file_pointer, ground_pol):
+def get_word_frequencies(file_name, ground_pol):
     user_word = defaultdict(Counter)
     left_word_freq, right_word_freq = Counter(), Counter()
-    for count, line in enumerate(file_pointer):
-        try:
-            submission = json.loads(f.readline().strip())
-            username, text = submission['author'], submission['body']
 
-            if username in ground_pol:
-                unigram = word_tokenize(text)
-                bigram = ngrams(unigram, 2)
-                for uni in unigram:
-                    if len(uni) <= 20 and len(uni) > 1 and 'http' not in uni:  # remove some noisy term and hyper link
-                        user_word[username][uni] += 1
-                        if ground_pol[username] == 1:
-                            right_word_freq[uni] += 1
-                        else:
-                            left_word_freq[uni] += 1
-                for bi in bigram:
-                    if len(bi[0]) <= 20 and len(bi[1]) <= 20 and 'http' not in bi[0] and 'http' not in bi[1]:
-                        user_word[username][bi[0] + ' ' + bi[1]] += 1
+    for submission in read_submissions(file_name):
+        username, text = submission['author'], submission['body']
 
+        if username in ground_pol:
+            unigram = word_tokenize(text)
+            bigram = ngrams(unigram, 2)
+            for uni in unigram:
+                if 20 >= len(uni) > 1 and 'http' not in uni:  # remove some noisy term and hyper link
+                    user_word[username][uni] += 1
+                    if ground_pol[username] == 1:
+                        right_word_freq[uni] += 1
+                    else:
+                        left_word_freq[uni] += 1
+            for bi in bigram:
+                if len(bi[0]) <= 20 and len(bi[1]) <= 20 and 'http' not in bi[0] and 'http' not in bi[1]:
+                    user_word[username][bi[0] + ' ' + bi[1]] += 1
 
-        except (JSONDecodeError, AttributeError) as e:
-            print("Failed to parse line: {} with error: {}".format(line, e))
-
-        if count % 1000000 == 0 and count > 0:
-            print("Completed %d lines" % (count))
     return user_word, left_word_freq, right_word_freq
 
 
@@ -83,8 +58,10 @@ if __name__ == '__main__':
     train_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/train.json'
     test_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/test.json'
     dev_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/dev.json'
-    all_count_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/month_users_words/all_month_user.json'
-    word_count_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/month_users_words/all_month_word_counts.json'
+    all_count_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/month_users_words' \
+                    '/all_month_user.json '
+    word_count_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/month_users_words' \
+                     '/all_month_word_counts.json '
 
     if preparing_data:
         z = {}
@@ -103,8 +80,7 @@ if __name__ == '__main__':
             z = {**z, **ground_pol}
             file_path = '/shared/2/datasets/reddit-dump-all/RC/RC_' + year_month + ('.xz' if i < 7 else '.zst')
             print(file_path)
-            f = get_file_handle(file_path)
-            this_month_user_word, _, _ = get_word_frequencies(f, ground_pol)
+            this_month_user_word, _, _ = get_word_frequencies(file_path, ground_pol)
             for user in this_month_user_word:
                 all_count[user] = this_month_user_word[user] + (all_count[user] if user in all_count else Counter())
             print(len(all_count))

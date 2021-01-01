@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('/home/zbohan/projects/')
-from src.models.textclassifier.create_train_test_dev_all_months import get_file_handle
+from src.data.date_helper import get_file_handle
 import json
 from sklearn.metrics import classification_report
 from sklearn.utils import resample
@@ -50,7 +50,7 @@ def get_comments(file_pointer, ground_pol):
 
 
 def prepare_features(seq_1, max_seq_length=50, zero_pad=True, include_CLS_token=True, include_SEP_token=True):
-    # Tokenzine Input
+    # Tokenize Input
     tokens = tokenizer.tokenize(seq_1)[0:max_seq_length - 2]
     # Initialize Tokens
     if include_CLS_token:
@@ -63,7 +63,7 @@ def prepare_features(seq_1, max_seq_length=50, zero_pad=True, include_CLS_token=
     pad_id = tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0]
     # Input Mask
     input_mask = [1] * len(input_ids)
-    # Zero-pad sequence lenght
+    # Zero-pad sequence length
     if zero_pad:
         while len(input_ids) < max_seq_length:
             input_ids.append(pad_id)

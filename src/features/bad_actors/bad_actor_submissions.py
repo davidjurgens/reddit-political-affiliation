@@ -1,23 +1,7 @@
 import argparse
-import bz2
 import glob
 import json
-import lzma
 from collections import defaultdict
-from json import JSONDecodeError
-
-import zstd
-
-
-def get_file_handle(file_path):
-    ext = file_path.split('.')[-1]
-
-    if ext == "bz2":
-        return bz2.open(file_path)
-    elif ext == "xz":
-        return lzma.open(file_path)
-
-    raise AssertionError("Invalid extension for " + file_path + ". Expecting bz2 or xz file")
 
 
 def get_submission_text(submission):
@@ -30,53 +14,12 @@ def get_submission_text(submission):
 
 
 def parse_bad_actor_comments(file_path, bad_actors):
-    file_pointer = get_file_handle(file_path)
     bad_actor_comments = defaultdict(list)
-    for count, line in enumerate(file_pointer):
-        try:
-            submission = json.loads(file_pointer.readline().strip())
-            username = submission['author']
-            if username in bad_actors:
-                text = get_submission_text(submission)
-                bad_actor_comments[username].append(text)
-
-        except (JSONDecodeError, AttributeError) as e:
-            print("Failed to parse line: {} with error: {}".format(line, e))
-
-        if count % 1000000 == 0 and count > 0:
-            print("Completed {} lines".format(count))
-
-    return bad_actor_comments
-
-
-def parse_zst_bad_actor_comments(filename, bad_actors):
-    bad_actor_comments = defaultdict(list)
-    count = 0
-
-    with open(filename, 'rb') as f:
-        dctx = zstd.ZstdDecompressor()
-        with dctx.stream_reader(f) as reader:
-            while True:
-                chunk = reader.read(1000000000)  # Read in 1GB at a time
-                if not chunk:
-                    break
-
-                string_data = chunk.decode('utf-8')
-                lines = string_data.split("\n")
-                for i, line in enumerate(lines[:-1]):
-                    try:
-                        submission = json.loads(line)
-                        username = submission['author']
-                        if username in bad_actors:
-                            text = get_submission_text(submission)
-                            bad_actor_comments[username].append(text)
-
-                    except Exception as e:
-                        print("Failed to parse line: {} with error: {}".format(line, e))
-
-                    count += 1
-                    if count % 1000000 == 0 and count > 0:
-                        print("Completed {} lines for file: {}".format(count, filename))
+    for submission in read_in_bad_actors(file_path):
+        username = submission['author']
+        if username in bad_actors:
+            text = get_submission_text(submission)
+            bad_actor_comments[username].append(text)
 
     return bad_actor_comments
 
@@ -116,12 +59,7 @@ if __name__ == '__main__':
 
     for file in files:
         print("Starting on file: {}".format(file))
-        extension = file.split('.')[-1]
-        if extension == "zst":
-            bad_actor_submissions = parse_zst_bad_actor_comments(file, bad_actors)
-        else:
-            bad_actor_submissions = parse_bad_actor_comments(file, bad_actors)
-
+        bad_actor_submissions = parse_bad_actor_comments(file, bad_actors)
         fname = parse_name_from_filepath(file)
         out_file = args.out + fname + ".json"
         user_submissions_to_json(bad_actor_submissions, out_file)
