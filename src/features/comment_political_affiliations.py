@@ -1,7 +1,10 @@
+import sys
 import argparse
 import glob
 import re
 from collections import *
+
+sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.data.date_helper import read_submissions
 
@@ -94,7 +97,7 @@ def get_submission_text(sub):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get political affiliations from comments')
-    parser.add_argument('--dir', type=str, help="The directory of the raw/compressed reddit files to run on")
+    # parser.add_argument('--dir', type=str, help="The directory of the raw/compressed reddit files to run on")
     parser.add_argument('--out_politics', type=str,
                         help="Output directory for the political affiliations and bad actors",
                         default="/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/")
@@ -102,7 +105,13 @@ if __name__ == '__main__':
                         help="Output directory for the political affiliations and bad actors",
                         default="/shared/0/projects/reddit-political-affiliation/data/bad-actors/")
     args = parser.parse_args()
-    files = glob.glob(args.dir)
+    # files = glob.glob(args.dir)
+
+    files = glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
+    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
+    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.bz2'))
+    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
+    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
 
     for file in files:
         print("Starting on file: {}".format(file))

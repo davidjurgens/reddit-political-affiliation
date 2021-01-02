@@ -41,3 +41,5 @@ def read_submissions(file_name):
 
         if count % 1000000 == 0 and count > 0:
             print("Completed {} lines for file {}".format(count, file_name))
+
+    file_pointer.close()
