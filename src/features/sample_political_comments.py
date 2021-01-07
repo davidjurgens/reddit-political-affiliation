@@ -30,7 +30,7 @@ def get_samples(file_name, n=25):
     sample_count = 0
     for submission in read_submissions(file_name):
         username, text, created_utc = submission['author'], submission['body'].lower(), submission['created_utc']
-
+        text = text.replace(',', '')
         if re.findall(DEM_PATTERN, text) or re.findall(ANTI_REP_PATTERN, text):
             row = {'file': file_name, 'politics': 'Democrat', 'comment': text, 'created_utc': created_utc}
             sample_rows.append(row)
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     samples = []
 
-    for file in files[::-1]:
+    for file in files:
         print("Starting on file: {}".format(file))
         extension = file.split('.')[-1]
         fname = parse_name_from_filepath(file)

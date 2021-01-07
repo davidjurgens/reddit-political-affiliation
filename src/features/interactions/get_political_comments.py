@@ -1,5 +1,5 @@
-import sys
 import glob
+import sys
 from collections import defaultdict
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
@@ -14,7 +14,7 @@ def get_political_user_comment_ids(files, political_users):
     for file in files:
         for submission in read_submissions(file):
             author = submission['author']
-            if author in political_users:
+            if author in political_users and author != "[deleted]" and author != 'AutoModerator':
                 comment_id, parent_id, subreddit, created_utc = submission['id'], submission['parent_id'], submission[
                     'subreddit'], submission['created_utc']
                 politics = political_users[author]
