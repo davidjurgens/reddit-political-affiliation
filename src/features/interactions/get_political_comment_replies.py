@@ -27,7 +27,8 @@ def get_political_comment_replies(raw_files, political_comments):
         for submission in read_submissions(file):
             comment_id, parent_id, subreddit, created_utc = submission['id'], submission['parent_id'], submission[
                 'subreddit'], submission['created_utc']
-            author = submission['author']
+            author, text = submission['author'], submission['body']
+            text = " ".join(text.split())
             if author == '[deleted]' or author == 'AutoModerator':
                 continue
             # Check if the parent of the comment is from a political user (i.e. a reply to a political comment)
@@ -40,7 +41,7 @@ def get_political_comment_replies(raw_files, political_comments):
                     else:
                         politics = "Unknown"
                     political_comment = PoliticalComment(comment_id, parent_id, author, subreddit, created_utc,
-                                                         politics)
+                                                         politics, text)
                     yield political_comment
 
 
@@ -52,12 +53,14 @@ def get_all_comments(raw_files):
 
     for file in raw_files:
         for submission in read_submissions(file):
-            comment_id, parent_id, subreddit, created_utc, author = submission['id'], submission['parent_id'], \
+            comment_id, parent_id, subreddit, created_utc, author, text = submission['id'], submission['parent_id'], \
                                                                     submission['subreddit'], submission['created_utc'], \
-                                                                    submission['author']
+                                                                    submission['author'], submission['body']
             try:
                 text = submission['body']
-                text = text.replace('\t', '')  # Remove tabs just in case
+                text = " ".join(text.split())
+                # Forgot to remove t1_ from some comments...
+
                 if comment_id in pol_comments:
                     politics = pol_comments[comment_id].political_affiliation
                     yield PoliticalComment(comment_id, parent_id, author, subreddit, created_utc,
@@ -69,7 +72,6 @@ def get_all_comments(raw_files):
             except Exception:
                 pass
 
-
 if __name__ == '__main__':
     comment_file = '/shared/0/projects/reddit-political-affiliation/data/interactions/comment_ids.tsv'
     comment_data = read_in_comment_data(comment_file)
@@ -80,9 +82,9 @@ if __name__ == '__main__':
     raw_files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
     raw_files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.bz2'))
 
-    with open(out_child_tsv, 'w') as out_f:
-        for pol_comment in get_political_comment_replies(raw_files, comment_data):
-            out_f.write(pol_comment.to_tsv_row())
+    # with open(out_child_tsv, 'w') as out_f:
+    #     for pol_comment in get_political_comment_replies(raw_files, comment_data):
+    #         out_f.write(pol_comment.to_tsv_row())
 
     with open(out_all_comments, 'w') as out_f:
         for pol_comment in get_all_comments(raw_files):

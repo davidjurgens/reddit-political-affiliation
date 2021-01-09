@@ -17,8 +17,10 @@ def get_political_user_comment_ids(files, political_users):
             if author in political_users and author != "[deleted]" and author != 'AutoModerator':
                 comment_id, parent_id, subreddit, created_utc = submission['id'], submission['parent_id'], submission[
                     'subreddit'], submission['created_utc']
+                text = submission['body']
+                text = " ".join(text.split())
                 politics = political_users[author]
-                political_comment = PoliticalComment(comment_id, parent_id, author, subreddit, created_utc, politics)
+                political_comment = PoliticalComment(comment_id, parent_id, author, subreddit, created_utc, politics, text)
                 yield political_comment
 
 

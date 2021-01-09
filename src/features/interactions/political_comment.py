@@ -8,7 +8,7 @@ class PoliticalComment:
         self.political_affiliation = str(political_affiliation)
         self.text = str(text)
 
-    def __dict__(self):
+    def to_dict(self):
         return {"comment_id": self.comment_id, "parent_id": self.parent_id, "username": self.username,
                 "subreddit": self.subreddit, "created": self.created, 'politics': self.political_affiliation,
                 'text': self.text}
