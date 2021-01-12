@@ -72,6 +72,25 @@ def get_all_comments(raw_files):
             except Exception:
                 pass
 
+def remove_id_prefix_and_bots(in_file, bots):
+    """ Go back through and do some post collection cleaning """
+    comments = 0
+    with open(in_file, 'r') as f:
+        for line in f:
+            comment_id, parent_id, username, subreddit, created, politics, text = line.split('\t')
+            if username not in bots:
+                if comment_id[:2] == 't1':
+                    comment_id = comment_id[3:]
+                if parent_id[:2] == 't1':
+                    parent_id = parent_id[3:]
+
+                comments += 1
+                political_comment = PoliticalComment(comment_id, parent_id, username, subreddit, created, politics, text)
+                yield political_comment
+
+    print("Total number of political comments: {}".format(comments))
+
+
 if __name__ == '__main__':
     comment_file = '/shared/0/projects/reddit-political-affiliation/data/interactions/comment_ids.tsv'
     comment_data = read_in_comment_data(comment_file)

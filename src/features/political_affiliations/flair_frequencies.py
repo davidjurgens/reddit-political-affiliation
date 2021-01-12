@@ -5,7 +5,7 @@ from os.path import basename
 
 from tqdm import tqdm
 
-from src.features.political_labels import labels
+from src.features.political_affiliations.political_labels import labels
 
 
 def save_flair_frequencies(month_files):
