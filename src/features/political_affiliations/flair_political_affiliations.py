@@ -1,5 +1,4 @@
 import glob
-import json
 import sys
 from collections import *
 
@@ -39,8 +38,8 @@ def parse_flair_affiliations(raw_files, out_directory):
                     entry = {'flair': flair, 'politics': labels[flair], 'subreddit': subreddit, 'created': created}
                     user_flairs[username].append(entry)
 
-        out_path = out_directory + parse_year_month_from_filename(file)
-        output_to_json(user_flairs, out_path)
+        out_path = out_directory + parse_year_month_from_filename(file) + '.tsv'
+        output_to_tsv(user_flairs, out_path)
 
     return user_flairs
 
@@ -58,15 +57,27 @@ def parse_year_month_from_filename(filename):
     return name.rsplit('.', 1)[0]
 
 
-def output_to_json(user_flairs, out_file):
+def output_to_tsv(user_flairs, out_file):
     print("Saving user flairs to file: {}".format(out_file))
     with open(out_file, 'w') as f:
-        json.dump(f, user_flairs)
+        for user, flair_data in user_flairs.items():
+            for entry in flair_data:
+                f.write("{}\t{}\t{}\t{}\t{}\n".format(user, entry['flair'], entry['politics'], entry['subreddit'],
+                                                      entry['created']))
 
 
 def read_in_flair_affiliations(in_file):
+    user_flairs = defaultdict(list)
+
+    print("Reading in flair affiliations from: {}".format(in_file))
     with open(in_file, 'r') as f:
-        return json.load(f)
+        for line in f:
+            username, flair, politics, subreddit, created = line.split('\t')
+            entry = {'flair': flair, 'politics': labels[
+                flair], 'subreddit': subreddit, 'created': created}
+            user_flairs[username].append(entry)
+
+    return user_flairs
 
 
 if __name__ == '__main__':

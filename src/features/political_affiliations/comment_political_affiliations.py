@@ -1,7 +1,7 @@
-import sys
 import argparse
 import glob
 import re
+import sys
 from collections import *
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
@@ -26,27 +26,27 @@ ANTI_DEM_PATTERN = "(i (hate|despise) (liberals|progressives|democrats|left-wing
 
 def parse_comment_affiliations(file_path):
     user_politics = defaultdict(list)
-    dem_count, anti_rep_count, rep_count, anti_dem_count = 0, 0, 0, 0
     for submission in read_submissions(file_path):
-        username = submission['author']
+        username, subreddit, created = submission['author'], submission['subreddit'], submission['created_utc']
+        if username == '[deleted]':  # Can clean out the bots later ...
+            continue
+
         text = get_submission_text(submission)
 
         if re.findall(DEM_PATTERN, text):
-            dem_count += 1
-            user_politics[username].append("Democrat")
+            entry = {'politics': 'Democrat', 'regex_match': 'dem', 'subreddit': subreddit, 'created': created}
+            user_politics[username].append(entry)
         elif re.findall(ANTI_REP_PATTERN, text):
-            anti_rep_count += 1
-            user_politics[username].append("Democrat")
+            entry = {'politics': 'Democrat', 'regex_match': 'anti_rep', 'subreddit': subreddit, 'created': created}
+            user_politics[username].append(entry)
         elif re.findall(REP_PATTERN, text):
-            rep_count += 1
-            user_politics[username].append("Republican")
+            entry = {'politics': 'Republican', 'regex_match': 'rep', 'subreddit': subreddit, 'created': created}
+            user_politics[username].append(entry)
         elif re.findall(ANTI_DEM_PATTERN, text):
-            anti_dem_count += 1
-            user_politics[username].append("Republican")
+            entry = {'politics': 'Republican', 'regex_match': 'anti_dem', 'subreddit': subreddit, 'created': created}
+            user_politics[username].append(entry)
 
     print("File completed! Total political users found: {}".format(len(user_politics)))
-    print("Democrat matches: {}. Anti-Republican matches: {}. Republican matches: {}. Anti-Democrat matches: {}"
-          .format(dem_count, anti_rep_count, rep_count, anti_dem_count))
     return user_politics
 
 
@@ -63,7 +63,7 @@ def handle_bad_actors(user_politics, out_file):
 
     print("Total # of bad actors: {}".format(len(bad_actors)))
 
-    # Save the bad actors to a file to a file
+    # Save the bad actors to a file
     with open(out_file, 'w') as f:
         for actor in bad_actors:
             f.write("{}\n".format(actor))
@@ -82,8 +82,23 @@ def parse_name_from_filepath(filepath):
 def user_politics_to_tsv(user_politics, out_file):
     print("Saving user politics to file: {}".format(out_file))
     with open(out_file, 'w') as f:
-        for user, political_party in user_politics.items():
-            f.write("{}\t{}\n".format(user, political_party))
+        for user, user_politics in user_politics.items():
+            for entry in user_politics:
+                f.write("{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['regex_match'], entry['subreddit'],
+                                                      entry['created']))
+
+
+def read_in_user_politics(in_file):
+    user_politics = defaultdict(list)
+
+    print("Reading in user politics from file: {}".format(in_file))
+    with open(in_file, 'r') as f:
+        for line in f:
+            user, politics, regex_match, subreddit, created = line.split('\t')
+            entry = {'politics': 'Republican', 'regex_match': 'anti_dem', 'subreddit': subreddit, 'created': created}
+            user_politics[user].append(entry)
+
+    return user_politics
 
 
 def get_submission_text(sub):
@@ -118,7 +133,7 @@ if __name__ == '__main__':
         user_politics = parse_comment_affiliations(file)
 
         fname = parse_name_from_filepath(file)
-        out_file_actors = args.out_bad_actors + fname + ".tsv"
+        # out_file_actors = args.out_bad_actors + fname + ".tsv"
+        # user_politics = handle_bad_actors(user_politics, out_file_actors)
         out_file = args.out_politics + fname + ".tsv"
-        user_politics = handle_bad_actors(user_politics, out_file_actors)
         user_politics_to_tsv(user_politics, out_file)
