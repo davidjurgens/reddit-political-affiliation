@@ -1,80 +1,119 @@
 import glob
-import json
-import re
+import sys
 from collections import defaultdict
+from operator import itemgetter
 
-from src.data.date_helper import read_submissions
+sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
-DEM_PATTERN = "(i am|i'm) a (democrat|liberal)|i vote[d]?( for| for a)? (democrat|hillary|biden|obama|blue)|i (" \
-              "hate|despise) (conservatives|republicans|trump|donald trump|mcconell|mitch mcconell)|(i am|i'm) a (" \
-              "former|ex) (conservative|republican)|(i am|i'm) an ex-(conservative|republican)|i (was|used to be|used " \
-              "to vote)( a| as a)? (conservative|republican)|fuck (conservatives|republicans|donald " \
-              "trump|trump|mcconell|mitch mcconell)"
+from src.features.political_affiliations.comment_political_affiliations import read_in_user_politics
 
-REP_PATTERN = "((i am|i'm) a (conservative|republican)|i vote[d]?( for| for a)? (" \
-              "republican|conservative|trump|romney|mcconell)|i (hate|despise) (" \
-              "liberals|progressives|democrats|left-wing|biden|hillary obama)|(i am|i'm) a (former|ex) (" \
-              "liberal|democrat|progressive)|(i am|i'm) an ex-(liberal|democrat|progressive)|i (was|used to be|used " \
-              "to vote)( a| as a)? (liberal|democrat|progressive)|fuck (" \
-              "liberals|progressives|democrats|biden|hillary|obama))"
+'''
+    Find users who claim to be both democrats and republicans in the comments
+'''
 
 
-def parse_submissions(fname, user_politics):
-    """ Return a users subreddits with their associated politics(s) and timestamps """
-    for submission in read_submissions(fname):
-        text = get_submission_text(submission)
-        username, created_utc = submission['author'], submission['created_utc']
-        political_party = get_user_political_party(text)
-        if political_party:
-            user_politics[username].append((political_party, created_utc))
+def get_bad_actors(user_politics):
+    """ Find users who claim to be apart of both parties """
+    bad_actors = set()
 
-    return user_politics
+    for user, political_data in user_politics.items():
+        is_rep, is_dem = False, False
+        for entry in political_data:
+            if entry['politics'] == 'Republican':
+                is_rep = True
+            if entry['politics'] == 'Democrat':
+                is_dem = True
+        if is_rep and is_dem:
+            bad_actors.add(user)
 
-
-def get_user_political_party(text):
-    if re.findall(DEM_PATTERN, text.lower()):
-        return "Democrat"
-    elif re.findall(REP_PATTERN, text.lower()):
-        return "Republican"
-    return ""
+    return itemgetter(bad_actors)(user_politics)
 
 
-def get_submission_text(sub):
-    text = ""
-    if "body" in sub:
-        text += sub['body'].lower()
-    if "title" in sub:
-        text += " " + sub['title'].lower()
-    return text
+def get_bad_actors_w_time_constraint(bad_actors, constraint_days=30):
+    """
+        Objective is to filter out users who genuinely change their politics over time. This method will narrow down
+        the bad actors to people who have flipped in a short amount of time (less than the given constraint)
+    """
+
+    filtered_bad_actors = set()
+
+    for user, political_data in bad_actors.items():
+        rep_timestamps, dem_timestamps = [], []
+        for entry in political_data:
+            # Grab all rep and dem declaration timestamps
+            if entry['politics'] == 'Republican':
+                rep_timestamps.append(entry['created'])
+            else:
+                dem_timestamps.append(entry['created'])
+
+        if min_days_between_timestamps(rep_timestamps, dem_timestamps) <= constraint_days:
+            filtered_bad_actors.add(user)
+
+    return itemgetter(bad_actors)(bad_actors)
 
 
-def read_in_existing_politics(user_politics, in_file):
-    print("Reading in existing user politics from file: {}".format(in_file))
-    with open(in_file) as json_file:
-        results = json.load(json_file)
+def min_days_between_timestamps(rep_timestamps, dem_timestamps):
+    # Find the smallest diff ts
+    smallest_diff = min_diff_between_lists(rep_timestamps, dem_timestamps)
+    seconds_in_a_day = 86400.0
+    return smallest_diff / seconds_in_a_day
 
-    for user, political_data in results.items():
-        user_politics[user] = political_data
 
-    print("Total number of existing user politics is: {}".format(len(user_politics)))
-    return user_politics
+def min_diff_between_lists(l1, l2):
+    min_diff = sys.maxsize
+    # Brute force but limited data so who cares...
+    for l1_item in l1:
+        for l2_item in l2:
+            diff = abs(int(l1_item) - int(l2_item))
+            if diff < min_diff:
+                min_diff = diff
+    return min_diff
+
+
+def save_bad_actors_to_tsv(bad_actors, out_file):
+    print("Saving bad actors to file: {}".format(out_file))
+    with open(out_file, 'w') as f:
+        for user, user_politics in bad_actors.items():
+            for entry in user_politics:
+                f.write(
+                    "{}\t{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['regex_match'], entry['subreddit'],
+                                                      entry['created'], entry['text']))
+
+
+def read_in_bad_actors_from_tsv(in_files):
+    bad_actors = defaultdict(list)
+
+    for in_file in in_files:
+        print("Reading in user politics from file: {}".format(in_file))
+        with open(in_file, 'r') as f:
+            for line in f:
+                user, politics, regex_match, subreddit, created, text = line.split('\t')
+                entry = {'politics': 'Republican', 'regex_match': 'anti_dem', 'subreddit': subreddit,
+                         'created': created,
+                         'text': text}
+                bad_actors[user].append(entry)
+
+    return bad_actors
 
 
 if __name__ == '__main__':
-    files = glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
-    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
-    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.bz2'))
-    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
-    files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
+    all_months = glob.glob('/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/*.tsv')
+    comment_politics = read_in_user_politics(all_months[:1])
 
-    user_politics = defaultdict(list)
-    out_path = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/politics.json'
-    user_politics = read_in_existing_politics(user_politics, out_path)
+    out_dir = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/'
 
-    for fname in files[19:]:
-        print("Starting on file: {}".format(fname))
-        user_politics = parse_submissions(fname, user_politics)
+    bad_actors = get_bad_actors(comment_politics)
+    save_bad_actors_to_tsv(bad_actors, out_dir + 'bad_actors.tsv')
 
-        # Save after every file just in case
-        with open(out_path, 'w') as fp:
-            json.dump(user_politics, fp)
+    bad_actors_30_days = get_bad_actors_w_time_constraint(bad_actors)
+    save_bad_actors_to_tsv(bad_actors_30_days, out_dir + 'bad_actors_30.tsv')
+    bad_actors_60_days = get_bad_actors_w_time_constraint(bad_actors, 60)
+    save_bad_actors_to_tsv(bad_actors_60_days, out_dir + 'bad_actors_60.tsv')
+    bad_actors_90_days = get_bad_actors_w_time_constraint(bad_actors, 90)
+    save_bad_actors_to_tsv(bad_actors_90_days, out_dir + 'bad_actors_90.tsv')
+    bad_actors_120_days = get_bad_actors_w_time_constraint(bad_actors, 120)
+    save_bad_actors_to_tsv(bad_actors_120_days, out_dir + 'bad_actors_120.tsv')
+    bad_actors_180_days = get_bad_actors_w_time_constraint(bad_actors, 180)
+    save_bad_actors_to_tsv(bad_actors_180_days, out_dir + 'bad_actors_180.tsv')
+    bad_actors_365_days = get_bad_actors_w_time_constraint(bad_actors, 365)
+    save_bad_actors_to_tsv(bad_actors_365_days, out_dir + 'bad_actors_365.tsv')

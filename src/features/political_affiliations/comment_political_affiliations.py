@@ -54,28 +54,6 @@ def parse_comment_affiliations(file_path):
     return user_politics
 
 
-def handle_bad_actors(user_politics, out_file):
-    """ Find users who claim to be both democrats and republicans """
-    good_actors, bad_actors = {}, []
-
-    # Find the users who claim to be both
-    for user, politics_list in user_politics.items():
-        if len(set(politics_list)) == 1:
-            good_actors[user] = politics_list[0]
-        else:
-            bad_actors.append(user)
-
-    print("Total # of bad actors: {}".format(len(bad_actors)))
-
-    # Save the bad actors to a file
-    with open(out_file, 'w') as f:
-        for actor in bad_actors:
-            f.write("{}\n".format(actor))
-
-    # Return the filtered data
-    return good_actors
-
-
 def parse_name_from_filepath(filepath):
     # Get everything after the last /
     name = filepath.rsplit('/', 1)[-1]
@@ -93,16 +71,17 @@ def user_politics_to_tsv(user_politics, out_file):
                                                       entry['created'], entry['text']))
 
 
-def read_in_user_politics(in_file):
+def read_in_user_politics(in_files):
     user_politics = defaultdict(list)
 
-    print("Reading in user politics from file: {}".format(in_file))
-    with open(in_file, 'r') as f:
-        for line in f:
-            user, politics, regex_match, subreddit, created, text = line.split('\t')
-            entry = {'politics': 'Republican', 'regex_match': 'anti_dem', 'subreddit': subreddit, 'created': created,
-                     'text': text}
-            user_politics[user].append(entry)
+    for in_file in in_files:
+        print("Reading in user politics from file: {}".format(in_file))
+        with open(in_file, 'r') as f:
+            for line in f:
+                user, politics, regex_match, subreddit, created, text = line.split('\t')
+                entry = {'politics': 'Republican', 'regex_match': 'anti_dem', 'subreddit': subreddit, 'created': created,
+                         'text': text}
+                user_politics[user].append(entry)
 
     return user_politics
 
@@ -116,15 +95,19 @@ def get_submission_text(sub):
     return " ".join(text.split())
 
 
+def filter_out_quote_text():
+    """
+        If a user is quoting another comment we should not consider that a political declaration
+    """
+    pass
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get political affiliations from comments')
     # parser.add_argument('--dir', type=str, help="The directory of the raw/compressed reddit files to run on")
     parser.add_argument('--out_politics', type=str,
                         help="Output directory for the political affiliations and bad actors",
                         default="/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/")
-    parser.add_argument('--out_bad_actors', type=str,
-                        help="Output directory for the political affiliations and bad actors",
-                        default="/shared/0/projects/reddit-political-affiliation/data/bad-actors/")
     args = parser.parse_args()
     # files = glob.glob(args.dir)
 
@@ -137,9 +120,6 @@ if __name__ == '__main__':
     for file in files:
         print("Starting on file: {}".format(file))
         user_politics = parse_comment_affiliations(file)
-
         fname = parse_name_from_filepath(file)
-        # out_file_actors = args.out_bad_actors + fname + ".tsv"
-        # user_politics = handle_bad_actors(user_politics, out_file_actors)
         out_file = args.out_politics + fname + ".tsv"
         user_politics_to_tsv(user_politics, out_file)
