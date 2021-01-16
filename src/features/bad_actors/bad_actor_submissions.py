@@ -1,27 +1,31 @@
-import argparse
 import glob
-import json
+import sys
 from collections import defaultdict
 
+sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
-def get_submission_text(submission):
-    text = ""
-    if "body" in submission:
-        text += submission['body'].lower()
-    if "title" in submission:
-        text += " " + submission['title'].lower()
-    return text
+from src.data.date_helper import read_submissions
+from src.features.bad_actors.bad_actors import read_in_bad_actors_from_tsv
 
 
-def parse_bad_actor_comments(file_path, bad_actors):
+def get_bad_actor_submissions(file_path, bad_actors):
     bad_actor_comments = defaultdict(list)
-    for submission in read_in_bad_actors(file_path):
+    for submission in read_submissions(file_path):
         username = submission['author']
         if username in bad_actors:
             text = get_submission_text(submission)
             bad_actor_comments[username].append(text)
 
     return bad_actor_comments
+
+
+def get_submission_text(sub):
+    text = ""
+    if "body" in sub:
+        text += sub['body'].lower()
+    if "title" in sub:
+        text += " " + sub['title'].lower()
+    return " ".join(text.split())
 
 
 def parse_name_from_filepath(filepath):
@@ -31,35 +35,41 @@ def parse_name_from_filepath(filepath):
     return name.rsplit('.', 1)[0]
 
 
-def user_submissions_to_json(bad_actors, out_file):
+def user_submissions_to_tsv(bad_actor_submissions, out_file):
     print("Saving user comments to file: {}".format(out_file))
     with open(out_file, 'w') as f:
-        json.dump(bad_actors, f)
+        for user, submissions in bad_actor_submissions.items():
+            for submission in submissions:
+                f.write("{}\t{}\n".format(user, submission))
 
 
-def read_in_bad_actors(in_file):
-    with open(in_file, 'r') as f:
-        return json.load(f)
+def read_in_bad_actor_submissions(in_files):
+    bad_actor_comments = defaultdict(list)
+
+    for in_file in in_files:
+        print("Reading in bad actor submissions from file: {}".format(in_file))
+        with open(in_file, 'r') as f:
+            for line in f:
+                user, text = line.split('\t')
+                bad_actor_comments[user].append(text)
+
+    return bad_actor_comments
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Get political affiliations from comments')
-    parser.add_argument('--bad_actors', type=str, help="Input file containing the list of bad actors",
-                        default="/shared/0/projects/reddit-political-affiliation/data/bad-actors/bad_actors.json")
-    parser.add_argument('--out', type=str, help="Output directory for the bad actor comments",
-                        default="/shared/0/projects/reddit-political-affiliation/data/bad-actors/comments/")
-    args = parser.parse_args()
     files = glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.bz2'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
 
-    bad_actors = read_in_bad_actors(args.bad_actors)
+    bad_actors_dir = glob.glob('/shared/0/projects/reddit-political-affiliation/data/bad-actors/*.tsv')
+    submissions_out_dir = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/submissions/'
+    bad_actors = read_in_bad_actors_from_tsv(bad_actors_dir)
 
     for file in files:
         print("Starting on file: {}".format(file))
-        bad_actor_submissions = parse_bad_actor_comments(file, bad_actors)
+        bad_actor_submissions = get_bad_actor_submissions(file, bad_actors)
         fname = parse_name_from_filepath(file)
-        out_file = args.out + fname + ".json"
-        user_submissions_to_json(bad_actor_submissions, out_file)
+        out_file = submissions_out_dir + fname + ".tev"
+        user_submissions_to_tsv(bad_actor_submissions, out_file)
