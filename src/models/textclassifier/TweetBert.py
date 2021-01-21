@@ -175,7 +175,7 @@ if __name__ == '__main__':
         print("Evaluation on test set:")
         mc = evaluate(model, test_loader)
     else:
-        model.load_state_dict(torch.load(comments_dir+year_month+"/BertTweet_3.pt", map_location=device))
+        model.load_state_dict(torch.load(comments_dir+year_month+"/BertTweet_0.pt", map_location=device))
         model.cuda()
         print("Evaluation on test set:")
         mc = evaluate(model, test_loader)
