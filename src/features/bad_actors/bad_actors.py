@@ -18,6 +18,9 @@ def get_bad_actors(user_politics):
     for user, political_data in user_politics.items():
         is_rep, is_dem = False, False
         for entry in political_data:
+            # Temporarily ignore all comments that have a quote in them
+            if "&gt;" in entry['text']:
+                continue
             if entry['politics'] == 'Republican':
                 is_rep = True
             if entry['politics'] == 'Democrat':
@@ -39,6 +42,9 @@ def get_bad_actors_w_time_constraint(bad_actors, constraint_days=30):
     for user, political_data in bad_actors.items():
         rep_timestamps, dem_timestamps = [], []
         for entry in political_data:
+            # Temporarily ignore all comments that have a quote in them
+            if "&gt;" in entry['text']:
+                continue
             # Grab all rep and dem declaration timestamps
             if entry['politics'] == 'Republican':
                 rep_timestamps.append(entry['created'])
@@ -74,6 +80,7 @@ def save_bad_actors_to_tsv(bad_actors, out_file):
     with open(out_file, 'w') as f:
         for user, user_politics in bad_actors.items():
             for entry in user_politics:
+                entry['text'] = " ".join(entry['text'].split())
                 f.write(
                     "{}\t{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['regex_match'], entry['subreddit'],
                                                       entry['created'], entry['text']))
@@ -87,7 +94,8 @@ def read_in_bad_actors_from_tsv(in_files):
         with open(in_file, 'r') as f:
             for line in f:
                 user, politics, regex_match, subreddit, created, text = line.split('\t')
-                entry = {'politics': politics, 'regex_match': regex_match, 'subreddit': subreddit, 'created': created,
+                entry = {'politics': politics, 'regex_match': regex_match, 'subreddit': subreddit,
+                         'created': created,
                          'text': text}
                 bad_actors[user].append(entry)
 
