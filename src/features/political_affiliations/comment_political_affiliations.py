@@ -78,11 +78,13 @@ def read_in_user_politics(in_files):
         print("Reading in user politics from file: {}".format(in_file))
         with open(in_file, 'r') as f:
             for line in f:
-                user, politics, regex_match, subreddit, created, text = line.split('\t')
-                entry = {'politics': 'Republican', 'regex_match': 'anti_dem', 'subreddit': subreddit, 'created': created,
-                         'text': text}
-                user_politics[user].append(entry)
-
+                try:
+                    user, politics, regex_match, subreddit, created, text = line.split('\t')
+                    entry = {'politics': politics, 'regex_match': regex_match, 'subreddit': subreddit, 'created': created,
+                             'text': text}
+                    user_politics[user].append(entry)
+                except Exception:
+                    pass
     return user_politics
 
 

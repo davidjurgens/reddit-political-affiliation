@@ -1,7 +1,6 @@
 import glob
 import sys
 from collections import defaultdict
-from operator import itemgetter
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
@@ -14,7 +13,7 @@ from src.features.political_affiliations.comment_political_affiliations import r
 
 def get_bad_actors(user_politics):
     """ Find users who claim to be apart of both parties """
-    bad_actors = set()
+    bad_actors = defaultdict(list)
 
     for user, political_data in user_politics.items():
         is_rep, is_dem = False, False
@@ -24,9 +23,9 @@ def get_bad_actors(user_politics):
             if entry['politics'] == 'Democrat':
                 is_dem = True
         if is_rep and is_dem:
-            bad_actors.add(user)
+            bad_actors[user] = political_data
 
-    return itemgetter(bad_actors)(user_politics)
+    return bad_actors
 
 
 def get_bad_actors_w_time_constraint(bad_actors, constraint_days=30):
@@ -35,7 +34,7 @@ def get_bad_actors_w_time_constraint(bad_actors, constraint_days=30):
         the bad actors to people who have flipped in a short amount of time (less than the given constraint)
     """
 
-    filtered_bad_actors = set()
+    filtered_bad_actors = defaultdict(list)
 
     for user, political_data in bad_actors.items():
         rep_timestamps, dem_timestamps = [], []
@@ -47,9 +46,9 @@ def get_bad_actors_w_time_constraint(bad_actors, constraint_days=30):
                 dem_timestamps.append(entry['created'])
 
         if min_days_between_timestamps(rep_timestamps, dem_timestamps) <= constraint_days:
-            filtered_bad_actors.add(user)
+            filtered_bad_actors[user] = political_data
 
-    return itemgetter(bad_actors)(bad_actors)
+    return filtered_bad_actors
 
 
 def min_days_between_timestamps(rep_timestamps, dem_timestamps):
@@ -88,8 +87,7 @@ def read_in_bad_actors_from_tsv(in_files):
         with open(in_file, 'r') as f:
             for line in f:
                 user, politics, regex_match, subreddit, created, text = line.split('\t')
-                entry = {'politics': 'Republican', 'regex_match': 'anti_dem', 'subreddit': subreddit,
-                         'created': created,
+                entry = {'politics': politics, 'regex_match': regex_match, 'subreddit': subreddit, 'created': created,
                          'text': text}
                 bad_actors[user].append(entry)
 
@@ -98,8 +96,8 @@ def read_in_bad_actors_from_tsv(in_files):
 
 if __name__ == '__main__':
     all_months = glob.glob('/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/*.tsv')
-    comment_politics = read_in_user_politics(all_months[:1])
 
+    comment_politics = read_in_user_politics(all_months)
     out_dir = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/'
 
     bad_actors = get_bad_actors(comment_politics)
