@@ -5,10 +5,10 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
-#from transformers import BertTokenizer,BertForSequenceClassification, BertConfig, AdamW
+from transformers import BertTokenizer,BertForSequenceClassification, BertConfig, AdamW
 from tqdm import tqdm
 from sklearn.metrics import classification_report
-from transformers import AutoModel, AutoTokenizer, AdamW
+#from transformers import AutoModel, AutoTokenizer, AdamW
 
 class BertTune(nn.Module):
     def __init__(self, BertModel,max_length=32):
@@ -103,8 +103,8 @@ def evaluate(model, data):
     return classification_report(y_true, y_pred, output_dict=True)['macro avg']['f1-score']
 
 if __name__ == '__main__':
-    test_mode=1
-    dv = "cuda:0"
+    test_mode=0
+    dv = "cuda:6"
 
     train_dir='OLIDv1.0/olid-training-v1.0.tsv'
     test_text_dir='OLIDv1.0/testset-levela.tsv'
@@ -118,13 +118,13 @@ if __name__ == '__main__':
     device = torch.device(dv)
     torch.cuda.set_device(int(dv[-1]))
 
-    # config = BertConfig.from_pretrained('bert-base-uncased')
-    # tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    # model = BertForSequenceClassification(config)
+    config = BertConfig.from_pretrained('bert-base-uncased')
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    model = BertForSequenceClassification(config)
 
-    BertTweet = AutoModel.from_pretrained("vinai/bertweet-base")
-    tokenizer = AutoTokenizer.from_pretrained("vinai/bertweet-base", normalization=True)
-    model = BertTune(BertTweet)
+    # BertTweet = AutoModel.from_pretrained("vinai/bertweet-base")
+    # tokenizer = AutoTokenizer.from_pretrained("vinai/bertweet-base", normalization=True)
+    # model = BertTune(BertTweet)
     model.cuda()
 
     params = {'batch_size': 16, 'shuffle': True, 'drop_last': False, 'num_workers': 1}
@@ -164,10 +164,10 @@ if __name__ == '__main__':
             mc = evaluate(model, dev_loader)
             if mc > best:
                 print("Updating Best Score:", str(mc), "saving model...")
-                torch.save(model.state_dict(),"best_tweetbert.pt")
+                torch.save(model.state_dict(),"best_bert.pt")
                 best = mc
     else:
-        model.load_state_dict(torch.load("best_tweetbert.pt", map_location=device))
+        model.load_state_dict(torch.load("best_bert.pt", map_location=device))
         print("Evaluation on test set:")
         mc = evaluate(model, test_loader)
 
