@@ -33,7 +33,7 @@ def get_random_users_non_political(month_file, count, political_users):
         username = submission['author']
 
         if username not in political_users:
-            users.add(political_users)
+            users.add(username)
 
         if len(users) >= count:
             return users
@@ -43,22 +43,20 @@ def get_random_users_non_political(month_file, count, political_users):
 
 def get_post_and_comment_counts(user_features, user):
     post_counts, comment_counts = 0, 0
-    for features in user_features[user]:
-        for entry in features:
-            if entry['type'] == 'post':
-                post_counts += 1
-            else:
-                comment_counts += 1
+    for entry in user_features[user]:
+        if entry['type'] == 'post':
+            post_counts += 1
+        else:
+            comment_counts += 1
     return post_counts, comment_counts
 
 
 def get_participation_in_subreddits(user_features, subreddits, user):
     submission_count = 0
 
-    for features in user_features[user]:
-        for entry in features:
-            if entry['subreddit'] in subreddits:
-                submission_count += 1
+    for entry in user_features[user]:
+        if entry['subreddit'] in subreddits:
+            submission_count += 1
     return submission_count
 
 
@@ -82,16 +80,23 @@ if __name__ == '__main__':
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
 
-    m_file = files[-1]
-    featured_subreddits = []
-    political_users = read_in_user_politics([m_file])
+    m_file = files[0]
+    print(m_file)
+    featured_subreddits = ['r/the_donald', 'r/politics', 'r/worldnews', 'r/Conservative', 'r/democrats', 'r/Liberal']
+
+    political_users = read_in_user_politics(
+        ['/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/RC_2019-09.tsv'])
+    print("Total number of political users: {}".format(len(political_users)))
 
     df_political_users = create_features_df(m_file, users=political_users, featured_subreddits=featured_subreddits)
     df_political_users['political'] = 1
+    print(df_political_users.head())
 
     non_political_users = get_random_users_non_political(m_file, len(political_users) * 4, political_users)
     df_non_political_users = create_features_df(m_file, non_political_users, featured_subreddits=featured_subreddits)
     df_non_political_users['political'] = 0
-
+    print(df_non_political_users.head())
     df = pd.concat([df_political_users, df_non_political_users])
-    df.to_csv('/shared/0/projects/reddit-political-affiliation/data/psm/{}.tsv'.format(m_file), index=False, sep='\t')
+    print("Saving features to CSV")
+    df.to_csv('/shared/0/projects/reddit-political-affiliation/data/psm/{}'.format('RC_2019-09.tsv'), index=False,
+              sep='\t')
