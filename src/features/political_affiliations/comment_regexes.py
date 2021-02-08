@@ -17,7 +17,7 @@ ANTI_DEM_PATTERN_SILVER = "(i (hate|despise) (liberals|progressives|democrats|le
 
 DEM_PATTERN_GOLD = "((i am|i'm) a (democrat|liberal)|i vote[d]?( for| for a)? (democrat|hillary|biden|obama|blue))"
 
-ANTI_REP_PATTERN_GOLD = "(i am|i'm) a (former|ex) (conservative|republican)|(i am|i'm) an ex-(conservative|republican)|" \ 
+ANTI_REP_PATTERN_GOLD = "(i am|i'm) a (former|ex) (conservative|republican)|(i am|i'm) an ex-(conservative|republican)|" \
                         "i (was|used to be|used to vote)( a| as a)? (conservative|republican)"
 
 REP_PATTERN_GOLD = "((i am|i'm) a (conservative|republican)|i vote[d]?( for| for a)? (" \
