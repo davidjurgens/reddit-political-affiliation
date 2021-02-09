@@ -4,10 +4,9 @@ import re
 import sys
 from collections import *
 
-from src.features.political_affiliations.comment_regexes import *
-
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
+from src.features.political_affiliations.comment_regexes import *
 from src.data.date_helper import read_submissions
 
 
@@ -150,11 +149,12 @@ if __name__ == '__main__':
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
 
-    in_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/*.tsv")
-    count_regex_matches(in_files)
-    # for file in files:
-    #     print("Starting on file: {}".format(file))
-    #     user_politics = parse_comment_affiliations_silver_standard(file)
-    #     fname = parse_name_from_filepath(file)
-    #     out_file = args.out_politics + fname + ".tsv"
-    #     user_politics_to_tsv(user_politics, out_file)
+    for file in files:
+        print("Starting on file: {}".format(file))
+        user_politics = parse_comment_affiliations_gold_standard(file)
+        fname = parse_name_from_filepath(file)
+        out_file = args.out_politics + fname + "_gold.tsv"
+        user_politics_to_tsv(user_politics, out_file)
+
+    # in_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/*.tsv")
+    # count_regex_matches(in_files)
