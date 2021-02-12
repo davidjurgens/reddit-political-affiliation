@@ -54,19 +54,19 @@ def parse_comment_affiliations_gold_standard(file_path):
 
         dem_match, rep_match = False, False
 
-        if re.findall(DEM_PATTERN_SILVER, text):
+        if re.findall(DEM_PATTERN_GOLD, text):
             entry = {'politics': 'Democrat', 'regex_match': 'dem', 'subreddit': subreddit, 'created': created,
                      'text': text}
             dem_match = True
-        if re.findall(ANTI_REP_PATTERN_SILVER, text):
+        if re.findall(ANTI_REP_PATTERN_GOLD, text):
             entry = {'politics': 'Democrat', 'regex_match': 'anti_rep', 'subreddit': subreddit, 'created': created,
                      'text': text}
             dem_match = True
-        if re.findall(REP_PATTERN_SILVER, text):
+        if re.findall(REP_PATTERN_GOLD, text):
             entry = {'politics': 'Republican', 'regex_match': 'rep', 'subreddit': subreddit, 'created': created,
                      'text': text}
             rep_match = True
-        if re.findall(ANTI_DEM_PATTERN_SILVER, text):
+        if re.findall(ANTI_DEM_PATTERN_GOLD, text):
             entry = {'politics': 'Republican', 'regex_match': 'anti_dem', 'subreddit': subreddit, 'created': created,
                      'text': text}
             rep_match = True
@@ -153,8 +153,8 @@ if __name__ == '__main__':
         print("Starting on file: {}".format(file))
         user_politics = parse_comment_affiliations_gold_standard(file)
         fname = parse_name_from_filepath(file)
-        out_file = args.out_politics + fname + "_gold.tsv"
+        out_file = args.out + 'gold/' + fname + ".tsv"
         user_politics_to_tsv(user_politics, out_file)
 
-    # in_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/*.tsv")
-    # count_regex_matches(in_files)
+    in_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/gold/*.tsv")
+    count_regex_matches(in_files)
