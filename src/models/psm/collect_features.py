@@ -12,9 +12,9 @@ from src.features.political_affiliations.comment_political_affiliations import r
 from src.models.psm.features import *
 
 # SETTINGS
-user_politics_dir = '/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/'
-user_data_dir = '/shared/0/projects/reddit-political-affiliation/data/psm/user-data/'
-user_features_dir = '/shared/0/projects/reddit-political-affiliation/data/psm/features/'
+user_politics_dir = '/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/silver/'
+user_data_dir = '/shared/0/projects/reddit-political-affiliation/data/psm/user-data/silver/'
+user_features_dir = '/shared/0/projects/reddit-political-affiliation/data/psm/features/silver/'
 
 
 def initial_collect_features(month_file, politics_in_file, control_group_multiple):
@@ -96,9 +96,9 @@ def get_random_users_non_political(month_file, count, political_users):
     return users
 
 
-def get_post_and_comment_counts(user_features, user):
+def get_post_and_comment_counts(features):
     post_counts, comment_counts = 0, 0
-    for entry in user_features[user]:
+    for entry in features:
         if entry['type'] == 'post':
             post_counts += 1
         else:
@@ -107,20 +107,20 @@ def get_post_and_comment_counts(user_features, user):
     return post_counts, comment_counts
 
 
-def get_participation_in_subreddits(user_features, subreddits, user):
+def get_participation_in_subreddits(features, subreddits):
     submission_count = 0
 
-    for entry in user_features[user]:
+    for entry in features:
         if entry['subreddit'] in subreddits:
             submission_count += 1
 
     return submission_count
 
 
-def get_time_of_day_counts(user_features, user):
+def get_time_of_day_counts(features):
     counts = OrderedDict({'morning': 0, 'afternoon': 0, 'evening': 0, 'night': 0})
 
-    for entry in user_features[user]:
+    for entry in features:
         result = get_time_of_day(entry['created'])
         counts[result] += 1
 
@@ -132,11 +132,11 @@ def build_features_df(political_user_features, non_political_user_features, top_
     rows = []
 
     for user, features in political_user_features.items():
-        post_counts, comment_counts = get_post_and_comment_counts(features, user)
-        top_subreddit_participation = get_participation_in_subreddits(features, top_subreddits, user)
-        pol_subreddit_participation = get_participation_in_subreddits(features, political_subreddits, user)
+        post_counts, comment_counts = get_post_and_comment_counts(features)
+        top_subreddit_participation = get_participation_in_subreddits(features, top_subreddits)
+        pol_subreddit_participation = get_participation_in_subreddits(features, political_subreddits)
         morning_post_count, afternoon_post_count, evening_post_count, night_post_count = get_time_of_day_counts(
-            features, user)
+            features)
         row = {'post_counts': post_counts, 'comment_counts': comment_counts,
                'top_subreddit_participation': top_subreddit_participation,
                'political_subreddit_participation': pol_subreddit_participation,
@@ -145,11 +145,11 @@ def build_features_df(political_user_features, non_political_user_features, top_
         rows.append(row)
 
     for user, features in non_political_user_features.items():
-        post_counts, comment_counts = get_post_and_comment_counts(features, user)
-        top_subreddit_participation = get_participation_in_subreddits(features, top_subreddits, user)
-        pol_subreddit_participation = get_participation_in_subreddits(features, political_subreddits, user)
+        post_counts, comment_counts = get_post_and_comment_counts(features)
+        top_subreddit_participation = get_participation_in_subreddits(features, top_subreddits)
+        pol_subreddit_participation = get_participation_in_subreddits(features, political_subreddits)
         morning_post_count, afternoon_post_count, evening_post_count, night_post_count = get_time_of_day_counts(
-            features, user)
+            features)
         row = {'post_counts': post_counts, 'comment_counts': comment_counts,
                'top_subreddit_participation': top_subreddit_participation,
                'political_subreddit_participation': pol_subreddit_participation,
@@ -181,22 +181,22 @@ if __name__ == '__main__':
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
 
-    m_file = files[0]
-    file_name = parse_name_from_filepath(m_file)
-    print(m_file, file_name)
+    for m_file in files:
+        file_name = parse_name_from_filepath(m_file)
+        print(m_file, file_name)
 
-    if user_features_already_exist(m_file):
-        print("User features already exist. Loading them in")
-        pol_user_features = load_user_features(user_data_dir + file_name + '_political.tsv')
-        non_pol_user_features = load_user_features(user_data_dir + file_name + '_non_political.tsv')
-    else:
-        print("Collecting user features for the first time. Parsing through the entire month of the data")
-        pol_user_features, non_pol_user_features = initial_collect_features(m_file,
-                                                                            user_politics_dir + file_name + '.tsv',
-                                                                            control_group_multiple=5)
+        if user_features_already_exist(m_file):
+            print("User features already exist. Loading them in")
+            pol_user_features = load_user_features(user_data_dir + file_name + '_political.tsv')
+            non_pol_user_features = load_user_features(user_data_dir + file_name + '_non_political.tsv')
+        else:
+            print("Collecting user features for the first time. Parsing through the entire month of the data")
+            pol_user_features, non_pol_user_features = initial_collect_features(m_file,
+                                                                                user_politics_dir + file_name + '.tsv',
+                                                                                control_group_multiple=5)
 
-    df_features = build_features_df(pol_user_features, non_pol_user_features, top_subreddits, political_subreddits)
-    print(df_features.head(10))
-    print("Saving features DataFrame to TSV")
-    df_features.to_csv('/shared/0/projects/reddit-political-affiliation/data/psm/features/{}'
-                       .format(file_name + '.tsv'), index=False, sep='\t')
+        df_features = build_features_df(pol_user_features, non_pol_user_features, top_subreddits, political_subreddits)
+        print(df_features.head(10))
+        print("Saving features DataFrame to TSV")
+        df_features.to_csv('/shared/0/projects/reddit-political-affiliation/data/psm/features/silver/{}'
+                           .format(file_name + '.tsv'), index=False, sep='\t')

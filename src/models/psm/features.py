@@ -60,7 +60,7 @@ time_mappings = {
 
 
 def get_time_of_day(created_utc):
-    hour = datetime.fromtimestamp(created_utc, pytz.UTC).hour
+    hour = datetime.fromtimestamp(int(created_utc), pytz.UTC).hour
 
     if 5 <= hour <= 11:
         return 'morning'
