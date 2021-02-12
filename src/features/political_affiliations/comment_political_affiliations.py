@@ -14,26 +14,36 @@ def parse_comment_affiliations_silver_standard(file_path):
     user_politics = defaultdict(list)
     for submission in read_submissions(file_path):
         username, subreddit, created = submission['author'], submission['subreddit'], submission['created_utc']
+
         if username == '[deleted]':  # Can clean out the bots later ...
             continue
 
         text = get_submission_text(submission)
+        # Ignore comments with quote replies
+        if "&gt;" in text:
+            continue
+
+        dem_match, rep_match = False, False
 
         if re.findall(DEM_PATTERN_SILVER, text):
             entry = {'politics': 'Democrat', 'regex_match': 'dem', 'subreddit': subreddit, 'created': created,
                      'text': text}
-            user_politics[username].append(entry)
-        elif re.findall(ANTI_REP_PATTERN_SILVER, text):
+            dem_match = True
+        if re.findall(ANTI_REP_PATTERN_SILVER, text):
             entry = {'politics': 'Democrat', 'regex_match': 'anti_rep', 'subreddit': subreddit, 'created': created,
                      'text': text}
-            user_politics[username].append(entry)
-        elif re.findall(REP_PATTERN_SILVER, text):
+            dem_match = True
+        if re.findall(REP_PATTERN_SILVER, text):
             entry = {'politics': 'Republican', 'regex_match': 'rep', 'subreddit': subreddit, 'created': created,
                      'text': text}
-            user_politics[username].append(entry)
-        elif re.findall(ANTI_DEM_PATTERN_SILVER, text):
+            rep_match = True
+        if re.findall(ANTI_DEM_PATTERN_SILVER, text):
             entry = {'politics': 'Republican', 'regex_match': 'anti_dem', 'subreddit': subreddit, 'created': created,
                      'text': text}
+            rep_match = True
+
+        # Ignore comments that match both patterns
+        if dem_match or rep_match and not (dem_match and rep_match):
             user_politics[username].append(entry)
 
     print("File completed! Total political users found: {}".format(len(user_politics)))
