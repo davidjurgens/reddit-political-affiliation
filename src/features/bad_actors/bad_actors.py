@@ -103,10 +103,10 @@ def read_in_bad_actors_from_tsv(in_files):
 
 
 if __name__ == '__main__':
-    all_months = glob.glob('/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/*.tsv')
+    all_months = glob.glob('/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/gold/*.tsv')
 
     comment_politics = read_in_user_politics(all_months)
-    out_dir = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/'
+    out_dir = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/gold/'
 
     bad_actors = get_bad_actors(comment_politics)
     save_bad_actors_to_tsv(bad_actors, out_dir + 'bad_actors.tsv')
