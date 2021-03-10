@@ -33,28 +33,27 @@ def grab_all_data_sources():
 
 
 def build_df(silver, gold, flair):
-    # Politics, Subreddit, Created UTC
     rows = []
 
     print("Working on silver data")
     for user, user_politics in silver.items():
         for entry in user_politics:
-            row = {'politics': entry['politics'], 'subreddit': entry['subreddit'], 'created': entry['created'],
-                   'source': 'silver'}
+            row = {'username': user, 'source': 'silver', 'politics': entry['politics'], 'subreddit': entry['subreddit'],
+                   'created': entry['created']}
             rows.append(row)
 
     print("Working on gold data")
     for user, user_politics in gold.items():
         for entry in user_politics:
-            row = {'politics': entry['politics'], 'subreddit': entry['subreddit'], 'created': entry['created'],
-                   'source': 'gold'}
+            row = {'username': user, 'source': 'gold', 'politics': entry['politics'], 'subreddit': entry['subreddit'],
+                   'created': entry['created']}
             rows.append(row)
 
     print("Working on flair data")
     for user, flair_data in flair.items():
         for entry in flair_data:
-            row = {'politics': entry['politics'], 'subreddit': entry['subreddit'], 'created': entry['created'],
-                   'source': 'flair'}
+            row = {'username': user, 'source': 'flair', 'politics': entry['politics'], 'subreddit': entry['subreddit'],
+                   'created': entry['created']}
             rows.append(row)
 
     return pd.DataFrame(rows)
