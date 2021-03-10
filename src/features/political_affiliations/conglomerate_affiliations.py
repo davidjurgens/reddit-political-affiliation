@@ -1,9 +1,9 @@
 import glob
+import random
 import sys
+from collections import defaultdict
 
-import numpy as np
 import pandas as pd
-from sklearn.utils import shuffle
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
@@ -33,42 +33,84 @@ def grab_all_data_sources():
 
 
 def build_df(silver, gold, flair):
-    rows = []
+    user_entries = defaultdict(list)
 
     print("Working on silver data")
     for user, user_politics in silver.items():
         for entry in user_politics:
             row = {'username': user, 'source': 'silver', 'politics': entry['politics'], 'subreddit': entry['subreddit'],
                    'created': entry['created']}
-            rows.append(row)
+            if not value_already_exists(user_entries, row):
+                user_entries[user].append(row)
 
     print("Working on gold data")
     for user, user_politics in gold.items():
         for entry in user_politics:
             row = {'username': user, 'source': 'gold', 'politics': entry['politics'], 'subreddit': entry['subreddit'],
                    'created': entry['created']}
-            rows.append(row)
+            if not value_already_exists(user_entries, row):
+                user_entries[user].append(row)
 
     print("Working on flair data")
     for user, flair_data in flair.items():
         for entry in flair_data:
             row = {'username': user, 'source': 'flair', 'politics': entry['politics'], 'subreddit': entry['subreddit'],
                    'created': entry['created']}
-            rows.append(row)
+            if not value_already_exists(user_entries, row):
+                user_entries[user].append(row)
+
+    # All user entries are next to each other in the dataframe so we can partition without having
+    # the same user in multiple datasets
+    random.shuffle(user_entries)
+    rows = []
+    for user, entries in user_entries.items():
+        for entry in entries:
+            rows.append(entry)
 
     return pd.DataFrame(rows)
+
+
+def value_already_exists(user_entries, row):
+    for entry in user_entries[row['username']]:
+        if row['politics'] == entry['politics'] and row['subreddit'] == entry['subreddit']:
+            return True
+
+    return False
+
+
+def validate_no_overlap(train_df, dev_df, test_df):
+    print("Checking overlap between train and dev users")
+    overlap_1 = set(train_df['username'].tolist()).intersection(set(dev_df['username'].tolist()))
+    print("Length of the overlap: {}".format(len(overlap_1)))
+
+    print("Checking overlap between dev and test users")
+    overlap_2 = set(dev_df['username'].tolist()).intersection(set(test_df['username'].tolist()))
+    print("Length of the overlap: {}".format(len(overlap_2)))
+
+
+def split_into_train_dev_test(df, train_size=0.8):
+    split_index = int(len(df) * train_size)
+    train = df[:split_index]
+    # Remaining data is test and dev. Divided into equal parts
+    test_dev = df[split_index + 1:]
+    half_split_index = int(len(test_dev) * .5)
+    test = test_dev[:half_split_index]
+    dev = test_dev[half_split_index:]
+    return train, test, dev
 
 
 if __name__ == '__main__':
     out_directory = "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/"
     silver, gold, flair = grab_all_data_sources()
     df = build_df(silver, gold, flair)
-    df = shuffle(df)
 
-    train, dev, test = np.split(df.sample(frac=1, random_state=42), [int(.8 * len(df)), int(.9 * len(df))])
+    train, dev, test = split_into_train_dev_test(df)
+
     print("Length of train data: {}".format(len(train)))
     print("Length of dev data: {}".format(len(dev)))
     print("Length of test data: {}".format(len(test)))
+
+    validate_no_overlap(train, dev, test)
 
     train.to_csv(out_directory + "train.tsv", sep='\t')
     dev.to_csv(out_directory + "dev.tsv", sep='\t')
