@@ -13,9 +13,15 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from transformers import AutoModel, AutoTokenizer,BertForSequenceClassification
-from TransformerClassifier import downsampling,evaluate
 
 test_mode=1
+
+def downsampling(data):
+    data_majority = data[data.Label == 1]
+    data_minority = data[data.Label == 0]
+    majority_down_sampled = resample(data_majority, n_samples=len(data_minority), random_state=42)
+    return pd.concat([majority_down_sampled, data_minority])
+
 
 def prepare_features(line,max_length=50):
     # input_ids = tokenizer.encode(line)
@@ -94,7 +100,7 @@ def evaluate(model, data):
 train_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/train.json'
 test_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/test.json'
 dev_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/dev.json'
-comments_dir = '/shared/0/projects/reddit-political-affiliation/data/user-comments/'
+comments_dir = '/shared/0/projects/reddit-political-affiliation/data/bert-text-classify/'
 
 
 if __name__ == '__main__':
