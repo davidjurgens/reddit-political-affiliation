@@ -61,7 +61,7 @@ def build_df(silver, gold, flair):
 
     # All user entries are next to each other in the dataframe so we can partition without having
     # the same user in multiple datasets
-    random.shuffle(user_entries)
+    user_entries = shuffle_dict_keys(user_entries)
     rows = []
     for user, entries in user_entries.items():
         for entry in entries:
@@ -70,9 +70,19 @@ def build_df(silver, gold, flair):
     return pd.DataFrame(rows)
 
 
+def shuffle_dict_keys(user_entries):
+    print("Shuffling usernames")
+    users = list(user_entries.keys())
+    random.shuffle(users)
+    shuffled_dict = {}
+    for user in users:
+        shuffled_dict[user] = user_entries[user]
+    return shuffled_dict
+
+
 def value_already_exists(user_entries, row):
     for entry in user_entries[row['username']]:
-        if row['politics'] == entry['politics'] and row['subreddit'] == entry['subreddit']:
+        if row['politics'] == entry['politics'] and row['source'] == entry['source']:
             return True
 
     return False
@@ -114,4 +124,4 @@ if __name__ == '__main__':
 
     train.to_csv(out_directory + "train.tsv", sep='\t')
     dev.to_csv(out_directory + "dev.tsv", sep='\t')
-    test.to_csv(out_directory + "test.csv", sep='\t')
+    test.to_csv(out_directory + "test.tsv", sep='\t')
