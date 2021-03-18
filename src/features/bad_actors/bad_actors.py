@@ -1,6 +1,8 @@
 import glob
 import sys
 from collections import defaultdict
+from matplotlib import pyplot as plt
+import seaborn as sns
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
@@ -102,6 +104,14 @@ def read_in_bad_actors_from_tsv(in_files):
     return bad_actors
 
 
+def plot_total_bad_actors_w_constraints(bad_actors_counts):
+    day_constraints = list(bad_actors_counts.keys())[::-1]
+    bad_actors = list(bad_actors_counts.values())[::-1]
+    print(day_constraints, bad_actors)
+    sns.lineplot(x=day_constraints, y=bad_actors).set_title("Number of bad actors by time constraint")
+    plt.show()
+
+
 if __name__ == '__main__':
     all_months = glob.glob('/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/gold/*.tsv')
 
@@ -123,3 +133,14 @@ if __name__ == '__main__':
     save_bad_actors_to_tsv(bad_actors_180_days, out_dir + 'bad_actors_180.tsv')
     bad_actors_365_days = get_bad_actors_w_time_constraint(bad_actors, 365)
     save_bad_actors_to_tsv(bad_actors_365_days, out_dir + 'bad_actors_365.tsv')
+
+    bad_actors_counts = {
+        "30": len(bad_actors_30_days),
+        "60": len(bad_actors_60_days),
+        "90": len(bad_actors_90_days),
+        "120": len(bad_actors_120_days),
+        "180": len(bad_actors_180_days),
+        "365": len(bad_actors_365_days)
+    }
+
+    plot_total_bad_actors_w_constraints(bad_actors_counts)
