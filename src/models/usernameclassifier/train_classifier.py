@@ -30,7 +30,7 @@ def build_training_df(source):
     print("Building training dataframe for source: {}".format(source))
     df = pd.read_csv(get_training_file_name(source), sep='\t', index_col=False)
 
-    usernames, politics = df['username'].tolist(), convert_politics_to_binary(df['politics'].tolist())
+    usernames, politics = df['username'].tolist(), convert_politics_from_categorical(df['politics'].tolist())
     non_political_users = get_non_political_users(n=len(df) * NON_POLITICAL_USERS_RATIO)
     non_political_users_politics = [0] * len(non_political_users)
 
@@ -94,11 +94,11 @@ def get_test_file_name(source):
         raise AssertionError("Invalid source: " + source)
 
 
-def convert_politics_to_binary(all_politics):
+def convert_politics_from_categorical(all_politics):
     values = []
     for politics in all_politics:
         if politics == 'Democrat':
-            values.append(0)
+            values.append(-1)
         elif politics == "Republican":
             values.append(1)
         else:
