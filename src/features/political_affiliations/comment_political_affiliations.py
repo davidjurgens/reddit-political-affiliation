@@ -1,7 +1,7 @@
 import argparse
+import glob
 import re
 import sys
-import glob
 from collections import *
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
@@ -29,26 +29,22 @@ def parse_comment_affiliations(file_path, is_silver=False):
         if re.match(dem_pattern, text):
             match = re.findall(dem_pattern, text)[0][0]
             entry = {'politics': 'Democrat', 'match': match, 'match_type': 'dem', 'subreddit': subreddit,
-                     'created': created,
-                     'text': text}
+                     'created': created, 'text': text}
             dem_match = True
         if re.match(anti_rep_pattern, text):
             match = re.findall(anti_rep_pattern, text)[0][0]
             entry = {'politics': 'Democrat', 'match': match, 'match_type': 'anti_rep', 'subreddit': subreddit,
-                     'created': created,
-                     'text': text}
+                     'created': created, 'text': text}
             dem_match = True
         if re.match(rep_pattern, text):
             match = re.findall(rep_pattern, text)[0][0]
             entry = {'politics': 'Republican', 'match': match, 'match_type': 'rep', 'subreddit': subreddit,
-                     'created': created,
-                     'text': text}
+                     'created': created, 'text': text}
             rep_match = True
         if re.match(anti_dem_pattern, text):
             match = re.findall(anti_dem_pattern, text)[0][0]
             entry = {'politics': 'Republican', 'match': match, 'match_type': 'anti_dem', 'subreddit': subreddit,
-                     'created': created,
-                     'text': text}
+                     'created': created, 'text': text}
             rep_match = True
 
         # Ignore comments that match both patterns
