@@ -1,4 +1,3 @@
-import argparse
 import glob
 import re
 import sys
@@ -17,63 +16,71 @@ def parse_comment_affiliations(file_path, is_silver=False):
                                                                        REP_PATTERN_SILVER, ANTI_DEM_PATTERN_SILVER
     else:
         dem_pattern, anti_rep_pattern, rep_pattern, anti_dem_pattern = DEM_PATTERN_GOLD, ANTI_REP_PATTERN_GOLD, \
-                                                                       REP_PATTERN_GOLD, ANTI_REP_PATTERN_GOLD
+                                                                       REP_PATTERN_GOLD, ANTI_DEM_PATTERN_GOLD
     bots = grab_bot_accounts()
     user_politics = defaultdict(list)
+    counts = defaultdict(int)
     for submission in read_submissions(file_path):
         username, subreddit, created = submission['author'], submission['subreddit'], submission['created_utc']
         text = get_submission_text(submission)
 
         dem_match, rep_match, match = False, False, ""
 
-        if re.match(dem_pattern, text):
+        if re.findall(dem_pattern, text):
             match = re.findall(dem_pattern, text)[0][0]
             entry = {'politics': 'Democrat', 'match': match, 'match_type': 'dem', 'subreddit': subreddit,
                      'created': created, 'text': text}
             dem_match = True
-        if re.match(anti_rep_pattern, text):
+        if re.findall(anti_rep_pattern, text):
             match = re.findall(anti_rep_pattern, text)[0][0]
             entry = {'politics': 'Democrat', 'match': match, 'match_type': 'anti_rep', 'subreddit': subreddit,
                      'created': created, 'text': text}
             dem_match = True
-        if re.match(rep_pattern, text):
+        if re.findall(rep_pattern, text):
             match = re.findall(rep_pattern, text)[0][0]
             entry = {'politics': 'Republican', 'match': match, 'match_type': 'rep', 'subreddit': subreddit,
                      'created': created, 'text': text}
             rep_match = True
-        if re.match(anti_dem_pattern, text):
+        if re.findall(anti_dem_pattern, text):
             match = re.findall(anti_dem_pattern, text)[0][0]
             entry = {'politics': 'Republican', 'match': match, 'match_type': 'anti_dem', 'subreddit': subreddit,
                      'created': created, 'text': text}
             rep_match = True
 
         # Ignore comments that match both patterns
-        if passes_cleanup_filters(username, bots, match, text, dem_match, rep_match):
+        if (dem_match or rep_match) and passes_cleanup_filters(username, bots, match, text, dem_match, rep_match,
+                                                               counts):
             user_politics[username].append(entry)
 
+    print(counts)
     print("File completed! Total political users found: {}".format(len(user_politics)))
     return user_politics
 
 
-def passes_cleanup_filters(username, bots, regex_match, full_text, is_dem_match, is_rep_match):
+def passes_cleanup_filters(username, bots, regex_match, full_text, is_dem_match, is_rep_match, counts):
     # Ignore comments that match both patterns
-    if not (is_dem_match or is_rep_match and not (is_dem_match and is_rep_match)):
+    if is_dem_match and is_rep_match:
+        counts['matches_both'] += 1
         return False
 
     # Ignore bots
     if username in bots:
+        counts['bot_count'] += 1
         return False
 
     # Ignore comments with quote replies
     if "&gt;" in full_text:
+        counts['quote_replies'] += 1
         return False
 
     # Ignore matches that are sarcastic or accusatory
     if re.findall(IS_ACCUSATION_PATTERN, full_text):
+        counts['is_sarcastic'] += 1
         return False
 
     # Ignore matches that come inside of quotes
     if match_is_inside_quotes(regex_match, full_text):
+        counts['is_inside_quotes'] += 1
         return False
 
     return True
@@ -156,13 +163,7 @@ def count_regex_matches(in_files):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Get political affiliations from comments')
-    # parser.add_argument('--dir', type=str, help="The directory of the raw/compressed reddit files to run on")
-    parser.add_argument('--out_politics', type=str,
-                        help="Output directory for the political affiliations and bad actors",
-                        default="/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/")
-    args = parser.parse_args()
-    # files = glob.glob(args.dir)
+    out = "/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/"
 
     files = glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
@@ -174,7 +175,7 @@ if __name__ == '__main__':
         print("Starting on file: {}".format(file))
         user_politics = parse_comment_affiliations(file)
         fname = parse_name_from_filepath(file)
-        out_file = args.out + 'gold/' + fname + ".tsv"
+        out_file = out + 'gold/' + fname + ".tsv"
         user_politics_to_tsv(user_politics, out_file)
 
     in_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/gold/*.tsv")
