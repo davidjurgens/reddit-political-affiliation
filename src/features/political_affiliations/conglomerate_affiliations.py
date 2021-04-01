@@ -109,11 +109,25 @@ def split_into_train_dev_test(df, train_size=0.8):
     return train, test, dev
 
 
+def get_train_political_affiliations():
+    file_path = "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/train.tsv"
+    user_politics = defaultdict(list)
+    print("Reading in user politics from file: {}".format(file_path))
+    train_df = pd.read_csv(file_path, index_col=False, delimiter='\t')
+
+    for index, row in train_df.iterrows():
+        entry = {'politics': row['politics'], 'source': row['source'], 'subreddit': row['subreddit'],
+                 'created': row['created']}
+        user_politics[row['username']].append(entry)
+
+    return user_politics
+
+
 if __name__ == '__main__':
     out_directory = "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/"
     silver, gold, flair = grab_all_data_sources()
     df = build_df(silver, gold, flair)
-
+    print(df.head(10))
     train, dev, test = split_into_train_dev_test(df)
 
     print("Length of train data: {}".format(len(train)))

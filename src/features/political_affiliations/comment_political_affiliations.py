@@ -120,8 +120,8 @@ def user_politics_to_tsv(user_politics, out_file):
         for user, user_politics in user_politics.items():
             for entry in user_politics:
                 f.write(
-                    "{}\t{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['match'], entry['match_type'],
-                                                      entry['subreddit'], entry['created'], entry['text']))
+                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['match'], entry['match_type'],
+                                                          entry['subreddit'], entry['created'], entry['text']))
 
 
 def read_in_user_politics(in_files):
@@ -133,12 +133,12 @@ def read_in_user_politics(in_files):
             for line in f:
                 try:
                     user, politics, match, match_type, subreddit, created, text = line.split('\t')
-                    entry = {'politics': politics, 'match': match, 'match_type': match_type, 'subreddit': subreddit,
-                             'created': created,
-                             'text': text}
+                    entry = {'politics': politics, 'match_type': match_type, 'subreddit': subreddit,
+                             'created': created.strip()}
                     user_politics[user].append(entry)
                 except Exception:
                     pass
+
     return user_politics
 
 
@@ -173,10 +173,10 @@ if __name__ == '__main__':
 
     for file in files:
         print("Starting on file: {}".format(file))
-        user_politics = parse_comment_affiliations(file)
+        user_politics = parse_comment_affiliations(file, is_silver=True)
         fname = parse_name_from_filepath(file)
-        out_file = out + 'gold/' + fname + ".tsv"
+        out_file = out + 'silver/' + fname + ".tsv"
         user_politics_to_tsv(user_politics, out_file)
 
-    in_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/gold/*.tsv")
+    in_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/silver/*.tsv")
     count_regex_matches(in_files)
