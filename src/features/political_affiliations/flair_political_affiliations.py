@@ -66,16 +66,16 @@ def output_to_tsv(user_flairs, out_file):
                                                       entry['created']))
 
 
-def read_in_flair_affiliations(in_file):
+def read_in_flair_affiliations(in_files):
     user_flairs = defaultdict(list)
 
-    print("Reading in flair affiliations from: {}".format(in_file))
-    with open(in_file, 'r') as f:
-        for line in f:
-            username, flair, politics, subreddit, created = line.split('\t')
-            entry = {'flair': flair, 'politics': labels[
-                flair], 'subreddit': subreddit, 'created': created}
-            user_flairs[username].append(entry)
+    for in_file in in_files:
+        print("Reading in flair affiliations from: {}".format(in_file))
+        with open(in_file, 'r') as f:
+            for line in f:
+                username, flair, politics, subreddit, created = line.split('\t')
+                entry = {'flair': flair, 'politics': labels[flair], 'subreddit': subreddit, 'created': created}
+                user_flairs[username].append(entry)
 
     return user_flairs
 

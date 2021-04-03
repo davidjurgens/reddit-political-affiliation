@@ -6,20 +6,17 @@ from tensorboardX import SummaryWriter
 
 parser = argparse.ArgumentParser(description='Train User2Subreddit word2vec model')
 parser.add_argument('--network', type=str, help="Location of the bipartite network file between users and subreddits")
-parser.add_argument('--flairs', type=str, help="Location of the user flair affiliations")
-parser.add_argument('--comments', type=str, help="Location of the comment political affiliations",
-                    default="/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/")
 parser.add_argument('--num_epochs', type=int, help="The number of epochs to run", default=10)
 parser.add_argument('--batch_size', type=int, help="The batch size", default=512)
 parser.add_argument('--out', type=str, help="Output directory")
 parser.add_argument('--device', type=str, help="The GPU to run on (e.g., cuda:0)")
 parser.add_argument('--year_month', type=str, help="The year-month (YYYY-MM) of Reddit data to analyze",
-                    default="2018-10")
+                    default="2019-09")
 parser.add_argument('--max_users', type=int, help="The maximum number of users to train on", default=-1)
 parser.add_argument('--log_dir', type=str, help="Log directory for tensorboard",
-                    default='/shared/0/projects/reddit-political-affiliation/working-dir/tensorboard-logs/')
+                    default='/shared/0/projects/reddit-political-affiliation/working-dir/tensor-logs/')
 parser.add_argument('--data_directory', type=str,
-                    default='/shared/0/projects/reddit-political-affiliation/data/word2vec/dataset/')
+                    default='/shared/0/projects/reddit-political-affiliation/data/word2vec/data-mappings/')
 parser.add_argument('--load_from', type=int, help='If load from a existing model', default=-1)
 args = parser.parse_args()
 
@@ -36,18 +33,7 @@ data_directory = args.data_directory + year_month
 if args.network:
     network_path = args.network
 else:
-    network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year_month + \
-                   '_filtered.tsv'
-
-# User politics data file
-if args.flairs:
-    flair_directory = args.flairs
-else:
-    flair_directory = "/shared/0/projects/reddit-political-affiliation/data/flair-affiliations/" + year_month + ".tsv"
-    # flair_directory = "src/data/" + year_month + ".tsv"
-
-comment_directory = args.comments + "RC_" + year_month + ".tsv"
-print(comment_directory)
+    network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year_month + '.tsv'
 
 if args.out:
     out_dir = args.out
@@ -72,4 +58,3 @@ else:
     torch.cuda.set_device(0)
 
 load_from = args.load_from
-print(load_from)

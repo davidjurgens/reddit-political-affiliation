@@ -1,21 +1,19 @@
-import glob
 import random
-from collections import defaultdict, Counter
+import sys
+from collections import defaultdict
 
+import pandas as pd
 import torch
 from torch.utils.data import random_split
-from tqdm import tqdm
+
+sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.data.word2vec.SubredditUserDataset import SubredditUserDataset
 
 
-def build_dataset(network_path, flair_directory, comment_directory, validation_split=0.1, max_users=-1):
-    user_subreddits, vocab, all_subreddits = build_user_to_subreddits(network_path)
-    flair_files = glob.glob(flair_directory)
-    comment_files = glob.glob(comment_directory)
-    flair_politics = read_flair_political_affiliations(flair_files)
-    comment_politics = read_comment_political_affiliations(comment_files)
-    user_to_politics = {**flair_politics, **comment_politics}
+def build_dataset(network_path, validation_split=0.1, max_users=-1):
+    print("Building dataset for network: {}".format(network_path))
+    user_subreddits, vocab, all_subreddits, user_to_politics = build_user_to_subreddits(network_path)
 
     # Create validation dataset for political flairs
     pol_validation, pol_training = dict_random_split(user_to_politics, split_size=validation_split)
@@ -37,82 +35,38 @@ def build_dataset(network_path, flair_directory, comment_directory, validation_s
     torch.manual_seed(42)
     training, validation = random_split(dataset, [train_size, validation_size])
     print("Train size: {} Validation size: {}".format(train_size, validation_size))
-    return dataset, training, validation, pol_validation, vocab
+    return dataset, training, validation, pol_validation, vocab, all_subreddits
 
 
 def build_user_to_subreddits(bipartite_network):
     vocab = set()
-    user_subreddits = defaultdict(set)
+    # Using a list so repeat subreddits are weighted!
+    user_subreddits = defaultdict(list)
     all_subreddits = set()
+    user_to_politics = dict()
+    print("Reading in bipartite network")
+    network_df = pd.read_csv(bipartite_network, index_col=False, delimiter='\t')
+    print("Total rows in the network file: {}".format(len(network_df)))
 
-    with open(bipartite_network, 'rt') as f:
-        lines = f.readlines()
-
-    for line in tqdm(lines, position=1, desc='Building vocab from file'):
-        user, subreddit, freq = line[:-1].split('\t')
-        vocab.add(user)
+    count = 0
+    for row in network_df.itertuples():
+        count += 1
+        username, subreddit, politics = row.username, row.subreddit, row.politics
+        vocab.add(username)
         vocab.add(subreddit)
-        user_subreddits[user].add(subreddit)
+        user_subreddits[username].append(subreddit)
         all_subreddits.add(subreddit)
+        user_to_politics[username] = row.politics
+
+        if count % 1000000 == 0:
+            print("Completed reading {} rows from the bipartite network".format(count))
 
     all_subreddits = list(all_subreddits)
     print("Length of vocab: " + str(len(vocab)))
     print("User count: " + str(len(user_subreddits)))
     print("Subreddit count: " + str(len(all_subreddits)))
 
-    return user_subreddits, vocab, all_subreddits
-
-
-def read_flair_political_affiliations(files):
-    user_to_politic_counts = defaultdict(Counter)
-
-    for fname in tqdm(files, desc="Loading flair politics"):
-        with open(fname, 'rt') as f:
-            for line in f:
-                user, politics, freq = line.split('\t')
-                politics = politics.strip().lower()
-                user_to_politic_counts[user][politics] += int(freq)
-
-    print("User to politic counts: " + str(len(user_to_politic_counts)))
-    print(list(user_to_politic_counts.items())[:10])
-
-    user_to_politics = {}
-    for u, pc in user_to_politic_counts.items():
-        if len(pc) > 1:
-            continue
-        user_to_politics[u] = list(pc.keys())[0]
-
-    print('Saw political affiliations for %d users from flairs' % len(user_to_politics))
-    return convert_affiliations_to_binary(user_to_politics)
-
-
-def read_comment_political_affiliations(files):
-    user_to_politics = {}
-
-    for fname in tqdm(files, desc="Loading politics from comment affiliations"):
-        with open(fname, 'r') as f:
-            for line in f:
-                user, politics = line.split('\t')
-                user_to_politics[user] = politics.strip().lower()
-
-    print('Saw political affiliations for %d users from comments' % len(user_to_politics))
-    return convert_affiliations_to_binary(user_to_politics)
-
-
-def convert_affiliations_to_binary(user_to_politics):
-    dems, reps = 0, 0
-
-    for user, politics in user_to_politics.items():
-        if politics == "democrat":
-            user_to_politics[user] = 0
-            dems += 1
-        elif politics == "republican":
-            user_to_politics[user] = 1
-            reps += 1
-
-    print("Number of democrats: {}".format(dems))
-    print("Number of republicans: {}".format(reps))
-    return user_to_politics
+    return user_subreddits, vocab, all_subreddits, user_to_politics
 
 
 def dict_random_split(d, split_size):
