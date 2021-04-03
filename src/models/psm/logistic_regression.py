@@ -1,11 +1,13 @@
 import glob
 import pandas as pd
+import seaborn as sns
+from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
 
-TEST_SPLIT = 0.1
+TEST_SPLIT = 0.2
 
 
 def read_in_features_df(in_files):
@@ -26,6 +28,13 @@ def test_logistic_clf(clf, df_test):
     print(accuracy_score(y_labels, y_preds))
 
 
+def plot_probability_score_distribution(clf, df_test):
+    y_labels, X_test = df_test['is_political'], df_test.drop('is_political', axis=1)
+    probabilities = clf.predict_proba(X_test)
+    sns.displot(probabilities)
+    plt.show()
+
+
 if __name__ == '__main__':
     files = glob.glob('/shared/0/projects/reddit-political-affiliation/data/psm/features/silver/*.tsv')
     df = read_in_features_df(files)
@@ -33,3 +42,4 @@ if __name__ == '__main__':
     print("Total number of users in train: {}. Total number of users in test: {}".format(len(train), len(test)))
     clf = train_logisitic_clf(train)
     test_logistic_clf(clf, test)
+    plot_probability_score_distribution(clf, test)

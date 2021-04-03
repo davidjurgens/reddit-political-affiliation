@@ -4,6 +4,7 @@ import pandas as pd
 import torch
 import torch.optim as optim
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, random_split
 from transformers import BertTokenizer,BertForSequenceClassification, BertConfig, AdamW
 from tqdm import tqdm
@@ -85,6 +86,7 @@ def evaluate(model, data):
     y_pred = []
     y_true = []
     model.eval()
+    phar=0.8
     for sent,mask,label in tqdm(data):
         if torch.cuda.is_available():
             sent = sent.cuda()
@@ -92,7 +94,12 @@ def evaluate(model, data):
             mask=mask.cuda()
         label = label.long()
         output = model.forward(sent,attention_mask=mask)[0]
-        _, predicted = torch.max(output.data, 1)
+
+        soft_output=F.softmax(output,dim=1)
+        weighted=torch.tensor([phar,1-phar]).cuda().repeat(soft_output.shape[0]).view(soft_output.shape[0],-1)
+        weighted_output=soft_output*weighted
+        _, predicted = torch.max(weighted_output, 1)
+
         total += label.size(0)
         correct += (predicted.cpu() == label.cpu()).sum()
         y_pred.extend(list(predicted.cpu().numpy()))
@@ -104,7 +111,7 @@ def evaluate(model, data):
 
 if __name__ == '__main__':
     test_mode=0
-    dv = "cuda:6"
+    dv = "cuda:7"
 
     train_dir='OLIDv1.0/olid-training-v1.0.tsv'
     test_text_dir='OLIDv1.0/testset-levela.tsv'

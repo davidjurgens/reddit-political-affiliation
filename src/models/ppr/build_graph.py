@@ -18,6 +18,7 @@ def grab_bot_accounts():
             bots.append(line.split('\t')[1])
 
     print("Known bots: %d" % len(bots))
+    bots.append('[deleted]')
     return bots
 
 

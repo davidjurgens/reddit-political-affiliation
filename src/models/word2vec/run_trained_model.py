@@ -1,27 +1,28 @@
+import sys
 import torch
-from models.word2vec.User2Subreddit import User2Subreddit
 from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
+
 from src.data.word2vec.make_dataset import build_dataset
+from src.models.word2vec.User2Subreddit import User2Subreddit
 
 # TODO: Move settings to argparse
-# So many paths....
-year_month = ''
-network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year_month + '_filtered.tsv'
-flair_directory = '/shared/0/projects/reddit-political-affiliation/data/flair-affiliations/' + year_month + '.tsv'
+year_month = '2019-09'
+network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year_month + '.tsv'
 model_path = '/shared/0/projects/reddit-political-affiliation/working-dir/word2vec-outputs/' + year_month + '/9.pt'
-id_mappings_path = '/shared/0/projects/reddit-political-affiliation/data/word2vec/dataset/' + year_month
+id_mappings_path = '/shared/0/projects/reddit-political-affiliation/data/word2vec/data-mappings/' + year_month
 embedding_dim = 50  # Constant
 out_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/predictions/users_' + year_month + '.tsv'
 
 print("Building the dataset for {}".format(year_month))
-dataset, training, validation, pol_validation, vocab = build_dataset(network_path, flair_directory)
+dataset, training, validation, pol_validation, vocab, all_subreddits = build_dataset(network_path)
 dataset.load_id_mappings(id_mappings_path)
 
 print("Loading in the model for {}".format(year_month))
-model = User2Subreddit(dataset.num_users(), embedding_dim, dataset.num_users())
+model = User2Subreddit(5714563, embedding_dim, 62812)
 model.load_state_dict(torch.load(model_path))
 model.eval()
 
@@ -46,12 +47,16 @@ def predict_on_political_validation():
 
     preds = []
     for val in political_predictions.detach().numpy():
-        if val[0] >= 0.5:
+        print(val)
+        if val[0] >= 0.9:
             preds.append(1)
+        elif val[0] <= -.9:
+            preds.append(-1)
         else:
             preds.append(0)
 
     labels = pol_labels.detach().numpy().astype(int)
+    print(preds, labels)
     print("Accuracy for {} is {}".format(year_month, accuracy_score(labels, preds)))
 
 

@@ -26,3 +26,5 @@ REP_PATTERN_GOLD = "((i am|i'm) a (conservative|republican)|i vote[d]?( for| for
 ANTI_DEM_PATTERN_GOLD = "(i am|i'm) a (" \
                         "former|ex) (liberal|democrat|progressive)|(i am|i'm) an ex-(liberal|democrat|progressive)|i (" \
                         "was|used to be|used to vote)( a| as a)? (liberal|democrat|progressive)"
+
+IS_ACCUSATION_PATTERN = "(assume|assumed|think|suspect|believe|presume|presumed|expect|expected|suppose|supposed) (i am|i'm) a (democrat|republican|liberal|conservative)"

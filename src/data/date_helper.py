@@ -4,7 +4,7 @@ import json
 import lzma
 from json import JSONDecodeError
 
-import zstd
+import zstandard as zstd
 
 """
     Functions to work with the raw compressed Reddit data

@@ -12,9 +12,9 @@ from src.features.political_affiliations.comment_political_affiliations import r
 from src.models.psm.features import *
 
 # SETTINGS
-user_politics_dir = '/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/silver/'
-user_data_dir = '/shared/0/projects/reddit-political-affiliation/data/psm/user-data/silver/'
-user_features_dir = '/shared/0/projects/reddit-political-affiliation/data/psm/features/silver/'
+user_politics_dir = '/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/gold/'
+user_data_dir = '/shared/0/projects/reddit-political-affiliation/data/psm/user-data/gold/'
+user_features_dir = '/shared/0/projects/reddit-political-affiliation/data/psm/features/gold/'
 
 
 def initial_collect_features(month_file, politics_in_file, control_group_multiple):
@@ -198,5 +198,5 @@ if __name__ == '__main__':
         df_features = build_features_df(pol_user_features, non_pol_user_features, top_subreddits, political_subreddits)
         print(df_features.head(10))
         print("Saving features DataFrame to TSV")
-        df_features.to_csv('/shared/0/projects/reddit-political-affiliation/data/psm/features/silver/{}'
+        df_features.to_csv('/shared/0/projects/reddit-political-affiliation/data/psm/features/gold/{}'
                            .format(file_name + '.tsv'), index=False, sep='\t')

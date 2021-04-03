@@ -18,12 +18,12 @@ from sklearn.metrics import auc, roc_curve
 
 torch.manual_seed(42)
 
-dataset, training, validation, pol_validation, vocab = build_dataset(network_path, flair_directory, comment_directory,
-                                                                     max_users=args.max_users)
+dataset, training, validation, pol_validation, vocab, all_subreddits = build_dataset(network_path,
+                                                                                     max_users=args.max_users)
 dataset.id_mappings_to_tsv(data_directory)
 
 word_to_ix = {word: i for i, word in enumerate(vocab)}
-all_subreddits = {v for v in vocab if v[:2] == 'r/' and v[2:4] != 'u_'}
+# all_subreddits = {v for v in vocab if v[:2] == 'r/' and v[2:4] != 'u_'}
 print("# of subreddits: " + str(len(all_subreddits)))
 
 # Model parameters set in train_settings
