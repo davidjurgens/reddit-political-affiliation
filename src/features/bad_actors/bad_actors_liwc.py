@@ -27,9 +27,10 @@ def tokenize(text):
 
 
 if __name__ == '__main__':
-    parse, category_names = liwc.load_token_parser('LIWC2007_English100131.dic')
+    parse, category_names = liwc.load_token_parser('/shared/0/resources/liwc/LIWC2015_English.dic')
 
     bad_actor_words = bad_actors_bag_of_words(
         "/shared/0/projects/reddit-political-affiliation/data/bad-actors/submissions/flair-and-gold/RC_2019-09.tev")
     bad_actor_counts = Counter(category for token in bad_actor_words for category in parse(token))
-    print(bad_actor_counts)
+    for k, v in bad_actor_counts.items():
+        print(k, v)
