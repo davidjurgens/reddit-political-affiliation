@@ -17,6 +17,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 
 
@@ -49,6 +50,7 @@ def read_in_comments(in_file, count=-1):
                                                      text)
                 comments.append(political_comment.to_dict())
                 if count > 0 and len(comments) >= count:
+                    print("Total number of political comments: {}".format(len(comments)))
                     return comments
             except Exception:
                 pass
@@ -56,15 +58,31 @@ def read_in_comments(in_file, count=-1):
     print("Total number of political comments: {}".format(len(comments)))
     return comments
 
+class Intents(Dataset):
+    def __init__(self, dataframe):
+        self.len = len(dataframe)
+        self.data = dataframe
+        #self.Label_Map={'Democrat':0,'Republican':1}
+
+    def __getitem__(self, index):
+        utterance = self.data.text[index]
+        y = self.data.politics[index]
+        X, mask = prepare_transformer_features(utterance)
+        return X, mask, utterance
+
+    def __len__(self):
+        return self.len
+
 def get_interactions(from_party, to_party):
     from_comment_ids = set(df_comments[df_comments['politics'] == from_party]['comment_id'].tolist())
     to_comment_ids = set(df_comments[df_comments['politics'] == to_party]['comment_id'].tolist())
     interactions = df_comments[(df_comments['comment_id'].isin(from_comment_ids) & df_comments['parent_id'].isin(to_comment_ids))]
     dyad=[from_party+'to'+to_party]*len(interactions)
-    interactions['dyad']=dyad
+    interactions['FromPolitics']=from_party
+    interactions['ToPolitics']=to_party
     return interactions
 
-def prepare_transformer_features(seq_1, max_seq_length=128, zero_pad=True, include_CLS_token=True, include_SEP_token=True):
+def prepare_transformer_features(seq_1, max_seq_length=64, zero_pad=True, include_CLS_token=True, include_SEP_token=True):
     # Tokenize Input
     tokens = tokenizer.tokenize(seq_1)[0:max_seq_length - 2]
     # Initialize Tokens
@@ -87,60 +105,21 @@ def prepare_transformer_features(seq_1, max_seq_length=128, zero_pad=True, inclu
     return torch.tensor(input_ids), torch.tensor(input_mask)
 
 
-def prepare_sentence_features(interactions):  # ,cats,subrredit_to_id):
-    affiliation_list = ['trump', 'bernie', 'biden', 'democrat', 'republic', 'maga', 'liberal', 'conservative']
-    sensitive_list = ['fuck', 'shit', 'suck', 'bitch', 'ass', 'pussy', 'piss', 'dick']
-    # sensitive_to_id=dict(zip(sensitive_list,range(len(sensitive_list))))
-    phar = 0.8
-    X = []
-    Y = []
-    sensitive_word_label = []
-    affiliation_label = []
-    response_toxic = []
-    for idx, (comment_id, line) in tqdm(enumerate(interactions.iterrows()), total=len(interactions)):
+def prepare_toxicity_in_batch(sent,mask):
+    Y=[]
+    mask = mask.cuda()
+    sent = sent.cuda()
+    output = model.forward(sent, attention_mask=mask)[0]
+    soft_output = F.softmax(output, dim=1)
+   # print(soft_output.shape)
+    toxicity_score=soft_output[:,1]
+    Y.extend(list(toxicity_score.cpu().detach().numpy()))
+    # print(soft_output,soft_output[0][1].item())
+    #Y.append(soft_output[0][1].item())
 
-        line['subreddit'] = line['subreddit'] if line['subreddit'] in subreddit_to_id else 'UNK'
+    return Y
 
-        label = 0
-        for sensitive_word in sensitive_list:
-            if sensitive_word in line['username'].lower():
-                label = 1
-        sensitive_word_label.append(label)
 
-        affi = 0
-        for affiliation_word in affiliation_list:
-            if affiliation_word in line['username'].lower():
-                affi = 1
-        affiliation_label.append(affi)
-
-        text_id, mask = prepare_transformer_features(line['text'])
-        text_id = text_id.unsqueeze(0).cuda()
-        mask = mask.unsqueeze(0).cuda()
-        output = model.forward(text_id, attention_mask=mask)[0]
-
-        soft_output = F.softmax(output, dim=1)
-        # print(soft_output,soft_output[0][1].item())
-        Y.append(soft_output[0][1].item())
-        # Y.append(torch.max(soft_output).item())
-        #         weighted = torch.tensor([phar, 1 - phar]).cuda().repeat(soft_output.shape[0]).view(soft_output.shape[0], -1)
-        #         weighted_output = soft_output * weighted
-        #         _, labels = torch.max(weighted_output, 1)
-        #         Y.append(labels.item())
-
-        response_text = df_comments[df_comments['comment_id'] == line['parent_id']]['text'].tolist()[0]
-        # print(response_text)
-        response_id, mask = prepare_transformer_features(response_text)
-        response_id = response_id.unsqueeze(0).cuda()
-        mask = mask.unsqueeze(0).cuda()
-        output = model.forward(response_id, attention_mask=mask)[0]
-        soft_output = F.softmax(output, dim=1)
-        response_toxic.append(soft_output[0][1].item())
-
-    print(sum(sensitive_word_label), sum(Y), sum(affiliation_label))
-    interactions['if_have_sensitive'] = sensitive_word_label
-    interactions['if_have_affiliation'] = affiliation_label
-    interactions['parent_toxicity'] = response_toxic
-    interactions['toxicity'] = Y
 
 if __name__ == '__main__':
     config = BertConfig.from_pretrained('bert-base-uncased')
@@ -164,13 +143,21 @@ if __name__ == '__main__':
     # print (subreddit_to_id)
     print("Prepareing interactions...")
     dem_to_dem = get_interactions('Democrat', 'Democrat')
+    print("done 1")
     rep_to_rep = get_interactions('Republican', 'Republican')
+    print("done 2")
     dem_to_rep = get_interactions('Democrat', 'Republican')
+    print("done 3")
     rep_to_dem = get_interactions('Republican', 'Democrat')
+    print("done 4")
     dem_to_unknown = get_interactions('Democrat', 'Unknown')
+    print("done 5")
     rep_to_unknown = get_interactions('Republican', 'Unknown')
+    print("done 6")
     unknown_to_dem = get_interactions('Unknown', 'Democrat')
+    print("done 7")
     unknown_to_rep = get_interactions('Unknown', 'Republican')
+    print("done 8")
 
     print("Dem to dem interactions: {}".format(len(dem_to_dem)))
     print("Rep to rep interactions: {}".format(len(rep_to_rep)))
@@ -191,29 +178,44 @@ if __name__ == '__main__':
                'RepublicantoDemocrat': 3, 'DemocrattoUnknown': 4, 'RepublicantoUnknown': 5,
                'UnknowntoDemocrat': 6, 'UnknowntoRepublican': 7}
 
-    all_data = pd.concat(comment_lists)
-    all_data = all_data.sample(frac=1)
+    all_data = pd.concat(comment_lists,ignore_index=True)
+    all_data = all_data.sample(frac=1).reset_index()
+    print(all_data.head())
+    all_set=Intents(all_data)
+    for i in range(5):
+        print(all_set[i][2])
+    params = {'batch_size': 64, 'shuffle': False, 'drop_last': False, 'num_workers': 1}
+    all_loader = DataLoader(all_set, **params)
+    iter_length=len(all_loader)
+    Y=[]
+    for i, (sent, mask, label) in tqdm(enumerate(all_loader), total=iter_length):
+        #print(sent.shape,mask.shape)
+        Y.extend(prepare_toxicity_in_batch(sent,mask))
+    print(len(Y),len(all_set))
 
-    prepare_sentence_features(all_data)
-    saved_path = '/shared/0/projects/reddit-political-affiliation/data/interactions_features/all_interactions_feature.tsv'
+    all_data['toxicity']=Y
+    saved_path = '/shared/0/projects/reddit-political-affiliation/data/interactions_features/real_interactions_feature.tsv'
     all_data.to_csv(saved_path, sep='\t')
-    all_data = pd.read_csv(saved_path, sep='\t')
-    feature_data = all_data[['toxicity', 'dyad', 'subreddit', 'if_have_sensitive', 'if_have_affiliation', 'parent_toxicity', 'text']]
 
-    train, test = train_test_split(feature_data, test_size=0.2)
-    test.head()
-
-    logitreg = smf.ols(
-        'toxicity ~  parent_toxicity + C(if_have_affiliation) + C(dyad) + C(subreddit) + C(if_have_sensitive)',
-        data=train).fit()
-    print(logitreg.summary())
-
-    result_table = logitreg.summary().tables[1]
-    TESTDATA = StringIO(result_table.as_csv())
-    df_result = pd.read_csv(TESTDATA, sep=',')
-    pd.set_option('display.max_rows', None)
-    #print(df_result.sort_values(by=['   coef   ']).head(50))
-    print(df_result.sort_values(by=['   coef   '],ascending=False).head(50))
+    # prepare_sentence_features(all_data)
+    #
+    # all_data = pd.read_csv(saved_path, sep='\t')
+    # feature_data = all_data[['toxicity', 'dyad', 'subreddit', 'if_have_sensitive', 'if_have_affiliation', 'parent_toxicity', 'text']]
+    #
+    # train, test = train_test_split(feature_data, test_size=0.2)
+    # test.head()
+    #
+    # logitreg = smf.ols(
+    #     'toxicity ~  parent_toxicity + C(if_have_affiliation) + C(dyad) + C(subreddit) + C(if_have_sensitive)',
+    #     data=train).fit()
+    # print(logitreg.summary())
+    #
+    # result_table = logitreg.summary().tables[1]
+    # TESTDATA = StringIO(result_table.as_csv())
+    # df_result = pd.read_csv(TESTDATA, sep=',')
+    # pd.set_option('display.max_rows', None)
+    # #print(df_result.sort_values(by=['   coef   ']).head(50))
+    # print(df_result.sort_values(by=['   coef   '],ascending=False).head(50))
 
 
 
