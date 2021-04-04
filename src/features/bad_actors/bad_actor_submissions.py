@@ -63,13 +63,16 @@ if __name__ == '__main__':
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
 
-    bad_actors_dir = glob.glob('/shared/0/projects/reddit-political-affiliation/data/bad-actors/*.tsv')
+    bad_actors_file = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/bad_actors_365_days_1_' \
+                      'flip_flop.tsv'
     submissions_out_dir = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/submissions/'
-    bad_actors = read_in_bad_actors_from_tsv(bad_actors_dir)
+    bad_actors = read_in_bad_actors_from_tsv([bad_actors_file])
+    bad_actors = set(bad_actors.keys())
+    print("Total number of bad actors: {}".format(len(bad_actors)))
 
     for file in files:
         print("Starting on file: {}".format(file))
         bad_actor_submissions = get_bad_actor_submissions(file, bad_actors)
         fname = parse_name_from_filepath(file)
-        out_file = submissions_out_dir + fname + ".tev"
+        out_file = submissions_out_dir + fname + ".tsv"
         user_submissions_to_tsv(bad_actor_submissions, out_file)

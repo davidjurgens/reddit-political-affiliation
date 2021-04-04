@@ -1,7 +1,7 @@
-import sys
 import glob
-from datetime import datetime, timedelta, timezone
+import sys
 from collections import Counter, defaultdict
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
@@ -41,7 +41,7 @@ def build_network(month_file, political_user_data, non_political_users):
             rows.append(entry)
         elif username in non_political_users:
             user_to_politics[username] = 0
-            entry = {'username': username, 'subreddit': subreddit, 'politics': 0}
+            entry = {'username': username, 'subreddit': subreddit, 'politics': -1}
             rows.append(entry)
 
     return user_to_politics, pd.DataFrame(rows, columns=['username', 'subreddit', 'politics'])
@@ -59,7 +59,7 @@ def grab_prevailing_politics(user_political_entries):
     elif most_frequent == "Republican":
         return 1
 
-    return 0.5
+    return -1
 
 
 def filter_to_top_subreddits(network_df):
