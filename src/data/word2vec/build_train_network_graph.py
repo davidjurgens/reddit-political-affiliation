@@ -40,8 +40,8 @@ def build_network(month_file, political_user_data, non_political_users):
             entry = {'username': username, 'subreddit': subreddit, 'politics': political_label}
             rows.append(entry)
         elif username in non_political_users:
-            user_to_politics[username] = 0
-            entry = {'username': username, 'subreddit': subreddit, 'politics': -1}
+            user_to_politics[username] = -1
+            entry = {'username': username, 'subreddit': subreddit}
             rows.append(entry)
 
     return user_to_politics, pd.DataFrame(rows, columns=['username', 'subreddit', 'politics'])
@@ -59,6 +59,7 @@ def grab_prevailing_politics(user_political_entries):
     elif most_frequent == "Republican":
         return 1
 
+    print("Failed to grab prevailing politics for data: " + user_political_entries)
     return -1
 
 
@@ -135,13 +136,13 @@ def parse_name_from_filepath(filepath):
 if __name__ == '__main__':
     train_tsv = "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/train.tsv"
     files = glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
-    m_file = files[0]
-    print("Using month file: {}".format(m_file))
 
-    bipartite_network = build_bipartite_network(m_file)
-    print(bipartite_network.head())
-    print(len(bipartite_network))
-    out_dir = "/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/"
-    out_file = out_dir + get_year_month(m_file) + '.tsv'
-    print("Saving network: {}".format(out_file))
-    bipartite_network.to_csv(out_file, sep='\t', index=False)
+    for m_file in files:
+        print("Using month file: {}".format(m_file))
+        bipartite_network = build_bipartite_network(m_file)
+        print(bipartite_network.head())
+        print(len(bipartite_network))
+        out_dir = "/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/"
+        out_file = out_dir + get_year_month(m_file) + '.tsv'
+        print("Saving network: {}".format(out_file))
+        bipartite_network.to_csv(out_file, sep='\t', index=False)
