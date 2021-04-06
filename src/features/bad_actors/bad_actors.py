@@ -5,7 +5,7 @@ from collections import defaultdict, OrderedDict
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-sys.path.append('/home/zbohan/projects/')
+sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.features.political_affiliations.comment_political_affiliations import read_in_user_politics
 from src.features.political_affiliations.flair_political_affiliations import read_in_flair_affiliations
@@ -165,19 +165,19 @@ def run_bad_actors(user_politics, constraint_days=365, flip_flops=1):
 
 
 if __name__ == '__main__':
-<<<<<<< Updated upstream
-    time_constraints = [365, 270, 180, 90]
-    bad_actor_counts = dict.fromkeys(time_constraints)
 
-    all_politics = get_all_user_politics()
+    # time_constraints = [365, 270, 180, 90]
+    # bad_actor_counts = dict.fromkeys(time_constraints)
+    #
+    # all_politics = get_all_user_politics()
+    #
+    # for time_constraint in time_constraints:
+    #     print("Starting on time constraint: {}".format(time_constraint))
+    #     bad_actor_count = run_bad_actors(all_politics, constraint_days=time_constraint, flip_flops=5)
+    #     bad_actor_counts[time_constraint] = bad_actor_count
+    #
+    # plot_total_bad_actors_w_constraints(bad_actor_counts)
 
-    for time_constraint in time_constraints:
-        print("Starting on time constraint: {}".format(time_constraint))
-        bad_actor_count = run_bad_actors(all_politics, constraint_days=time_constraint, flip_flops=5)
-        bad_actor_counts[time_constraint] = bad_actor_count
-
-    plot_total_bad_actors_w_constraints(bad_actor_counts)
-=======
     all_months = glob.glob('/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/*.tsv')
 
     comment_politics = read_in_user_politics(all_months)
@@ -209,4 +209,5 @@ if __name__ == '__main__':
     }
 
     plot_total_bad_actors_w_constraints(bad_actors_counts)
->>>>>>> Stashed changes
+
+
