@@ -8,8 +8,7 @@ from tqdm import tqdm
 
 class SubredditUserDataset(Dataset):
 
-    def __init__(self, user_subreddits, all_subreddits, user_to_politics, user_sub_frequencies, num_negative_samples=5,
-                 max_users=-1):
+    def __init__(self, user_subreddits, all_subreddits, user_to_politics, num_negative_samples=5, max_users=-1):
         self.pos_and_neg_samples = []
         # Mappings to the embedding dimensions
         self.user_to_idx = {}
@@ -32,27 +31,18 @@ class SubredditUserDataset(Dataset):
             if i >= num_users:
                 break
 
-            if user in user_to_politics:
-                politics = user_to_politics[user]
-            else:
-                politics = -1
-
+            politics = user_to_politics[user] # No politics will have a label of -1
             self.user_to_idx[user] = len(self.user_to_idx)
             user_idx = self.user_to_idx[user]
 
             # Add all the positive samples
-            user_total_freq = 0
             for subreddit in subreddits:
                 sub_idx = get_sub_idx(subreddit)
-                sub_freq = user_sub_frequencies[user][subreddit]
-                user_total_freq += sub_freq
-                # Weight by subreddit frequency by adding a positive sample for each time they post there
-                for i in range(sub_freq):
-                    self.pos_and_neg_samples.append((np.array([user_idx, sub_idx]), politics, 1))
+                self.pos_and_neg_samples.append((np.array([user_idx, sub_idx]), politics, 1))
 
             # Choose fixed negative samples
             neg = []
-            num_neg = len(subreddits) * user_total_freq * num_negative_samples
+            num_neg = len(subreddits) * num_negative_samples
             # guard against super active users?
             num_neg = min(num_neg, len(all_subreddits) - num_neg)
             while len(neg) < num_neg:
