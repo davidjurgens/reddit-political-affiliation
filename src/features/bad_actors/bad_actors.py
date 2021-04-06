@@ -5,7 +5,7 @@ from collections import defaultdict, OrderedDict
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
+sys.path.append('/home/zbohan/projects/')
 
 from src.features.political_affiliations.comment_political_affiliations import read_in_user_politics
 from src.features.political_affiliations.flair_political_affiliations import read_in_flair_affiliations
@@ -165,6 +165,7 @@ def run_bad_actors(user_politics, constraint_days=365, flip_flops=1):
 
 
 if __name__ == '__main__':
+<<<<<<< Updated upstream
     time_constraints = [365, 270, 180, 90]
     bad_actor_counts = dict.fromkeys(time_constraints)
 
@@ -176,3 +177,36 @@ if __name__ == '__main__':
         bad_actor_counts[time_constraint] = bad_actor_count
 
     plot_total_bad_actors_w_constraints(bad_actor_counts)
+=======
+    all_months = glob.glob('/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/*.tsv')
+
+    comment_politics = read_in_user_politics(all_months)
+    out_dir = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/'
+
+    bad_actors = get_bad_actors(comment_politics)
+    save_bad_actors_to_tsv(bad_actors, out_dir + 'bad_actors.tsv')
+
+    bad_actors_30_days = get_bad_actors_w_time_constraint(bad_actors)
+    save_bad_actors_to_tsv(bad_actors_30_days, out_dir + 'bad_actors_30.tsv')
+    bad_actors_60_days = get_bad_actors_w_time_constraint(bad_actors, 60)
+    save_bad_actors_to_tsv(bad_actors_60_days, out_dir + 'bad_actors_60.tsv')
+    bad_actors_90_days = get_bad_actors_w_time_constraint(bad_actors, 90)
+    save_bad_actors_to_tsv(bad_actors_90_days, out_dir + 'bad_actors_90.tsv')
+    bad_actors_120_days = get_bad_actors_w_time_constraint(bad_actors, 120)
+    save_bad_actors_to_tsv(bad_actors_120_days, out_dir + 'bad_actors_120.tsv')
+    bad_actors_180_days = get_bad_actors_w_time_constraint(bad_actors, 180)
+    save_bad_actors_to_tsv(bad_actors_180_days, out_dir + 'bad_actors_180.tsv')
+    bad_actors_365_days = get_bad_actors_w_time_constraint(bad_actors, 365)
+    save_bad_actors_to_tsv(bad_actors_365_days, out_dir + 'bad_actors_365.tsv')
+
+    bad_actors_counts = {
+        "30": len(bad_actors_30_days),
+        "60": len(bad_actors_60_days),
+        "90": len(bad_actors_90_days),
+        "120": len(bad_actors_120_days),
+        "180": len(bad_actors_180_days),
+        "365": len(bad_actors_365_days)
+    }
+
+    plot_total_bad_actors_w_constraints(bad_actors_counts)
+>>>>>>> Stashed changes
