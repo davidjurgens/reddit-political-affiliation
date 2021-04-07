@@ -5,6 +5,8 @@ from collections import defaultdict
 
 import pandas as pd
 
+from src.features.bad_actors.bad_actors import read_in_bad_actors_from_tsv
+
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.features.political_affiliations.comment_political_affiliations import read_in_user_politics
@@ -67,7 +69,8 @@ def build_df(silver, gold, flair):
         for entry in entries:
             rows.append(entry)
 
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    return filter_bad_actors(df)
 
 
 def shuffle_dict_keys(user_entries):
@@ -109,8 +112,7 @@ def split_into_train_dev_test(df, train_size=0.8):
     return train, test, dev
 
 
-def get_train_political_affiliations():
-    file_path = "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/train.tsv"
+def read_in_political_affiliations(file_path):
     user_politics = defaultdict(list)
     print("Reading in user politics from file: {}".format(file_path))
     train_df = pd.read_csv(file_path, index_col=False, delimiter='\t')
@@ -121,6 +123,36 @@ def get_train_political_affiliations():
         user_politics[row['username']].append(entry)
 
     return user_politics
+
+
+def filter_bad_actors(df):
+    print("Filtering out bad actors")
+    bad_actors = read_in_bad_actors_from_tsv(
+        ['/shared/0/projects/reddit-political-affiliation/data/bad-actors/bad_actors_365_days_1_flip_flop.tsv'])
+    bad_actors = set(bad_actors.keys())
+    print("Total number of bad actors: {}".format(len(bad_actors)))
+    return df[~df['username'].isin(bad_actors)]
+
+
+def get_train_political_affiliations():
+    return read_in_political_affiliations(
+        "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/train.tsv")
+
+
+def get_test_political_affiliations():
+    return read_in_political_affiliations(
+        "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/test.tsv")
+
+
+def get_dev_political_affiliations():
+    return read_in_political_affiliations(
+        "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/dev.tsv")
+
+
+def get_all_political_users():
+    silver_data, gold_data, flair_data = grab_all_data_sources()
+    df = build_df(silver_data, gold_data, flair_data)
+    return set(df['username'].tolist())
 
 
 if __name__ == '__main__':
