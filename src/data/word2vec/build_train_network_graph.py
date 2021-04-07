@@ -137,11 +137,9 @@ if __name__ == '__main__':
     train_tsv = "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/train.tsv"
     files = glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
 
-    for m_file in files:
+    for m_file in files[1:]:
         print("Using month file: {}".format(m_file))
-        bipartite_network = build_bipartite_network(m_file)
-        print(bipartite_network.head())
-        print(len(bipartite_network))
+        user_politics, bipartite_network = build_bipartite_network(m_file)
         out_dir = "/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/"
         out_file = out_dir + get_year_month(m_file) + '.tsv'
         print("Saving network: {}".format(out_file))
