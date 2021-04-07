@@ -122,7 +122,11 @@ def get_timestamp_range(year_month):
     year, month = year_month.split('-')
     # Timestamps are all UTC
     first_day_date = datetime(int(year), int(month), 1)
-    last_day_date = datetime(int(year), int(month) + 1, 1) - timedelta(days=1)
+    if int(month) == 12:
+        next_month = 1
+    else:
+        next_month = int(month) + 1
+    last_day_date = datetime(int(year), next_month, 1) - timedelta(days=1)
     start_ts = first_day_date.replace(tzinfo=timezone.utc).timestamp()
     end_ts = last_day_date.replace(tzinfo=timezone.utc).timestamp()
     return start_ts, end_ts
