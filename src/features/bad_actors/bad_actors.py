@@ -48,7 +48,7 @@ def get_all_user_politics():
 def get_bad_actors(user_politics, flip_flops=1):
     """ Find users who claim to be apart of both parties """
     bad_actors = defaultdict(list)
-    bad_actors_flip_counts={}
+    bad_actors_flip_counts = {}
 
     for user, political_data in user_politics.items():
         # Get all political declarations w/ their timestamps
@@ -73,18 +73,17 @@ def get_bad_actors(user_politics, flip_flops=1):
         if flip_flop_count >= flip_flops:
             bad_actors[user] = political_data
 
+    return bad_actors, bad_actors_flip_counts
 
-    return bad_actors,bad_actors_flip_counts
 
-
-def get_bad_actors_w_time_constraint(bad_actors,bad_actors_flip_counts, constraint_days=30):
+def get_bad_actors_w_time_constraint(bad_actors, bad_actors_flip_counts, constraint_days=30):
     """
         Objective is to filter out users who genuinely change their politics over time. This method will narrow down
         the bad actors to people who have flipped in a short amount of time (less than the given constraint)
     """
 
     filtered_bad_actors = defaultdict(list)
-    filtered_bad_actors_flip_counts={}
+    filtered_bad_actors_flip_counts = {}
 
     for user, political_data in bad_actors.items():
         rep_timestamps, dem_timestamps = [], []
@@ -97,9 +96,9 @@ def get_bad_actors_w_time_constraint(bad_actors,bad_actors_flip_counts, constrai
 
         if min_days_between_timestamps(rep_timestamps, dem_timestamps) <= constraint_days:
             filtered_bad_actors[user] = political_data
-            filtered_bad_actors_flip_counts[user]=bad_actors_flip_counts[user]
+            filtered_bad_actors_flip_counts[user] = bad_actors_flip_counts[user]
 
-    return filtered_bad_actors,filtered_bad_actors_flip_counts
+    return filtered_bad_actors, filtered_bad_actors_flip_counts
 
 
 def min_days_between_timestamps(rep_timestamps, dem_timestamps):
@@ -157,15 +156,16 @@ def run_bad_actors(user_politics, constraint_days=365, flip_flops=1):
     bad_actors, bad_actors_flip_counts = get_bad_actors(user_politics, flip_flops)
 
     print("Adding time constraint {} to bad actors".format(constraint_days))
-    bad_actors, bad_actors_flip_counts = get_bad_actors_w_time_constraint(bad_actors, bad_actors_flip_counts,constraint_days)
+    bad_actors, bad_actors_flip_counts = get_bad_actors_w_time_constraint(bad_actors, bad_actors_flip_counts,
+                                                                          constraint_days)
 
     print("Total number of bad actors: {}".format(len(bad_actors)))
 
-    out_dir = "bad_actors_flip_counts/"#"/shared/0/projects/reddit-political-affiliation/data/bad-actors/"
+    out_dir = "bad_actors_flip_counts/"  # "/shared/0/projects/reddit-political-affiliation/data/bad-actors/"
     file_name = out_dir + 'bad_actors_' + str(constraint_days) + '_days_' + str(flip_flops) + '_flip_flop.tsv'
     print("Outputting bad actors as TSV to: {}".format(file_name))
     save_bad_actors_to_tsv(bad_actors, file_name)
-    with open(out_dir+'flip_counts_'+str(constraint_days) + '_days.tsv', 'w') as f:
+    with open(out_dir + 'flip_counts_' + str(constraint_days) + '_days.tsv', 'w') as f:
         for key in bad_actors_flip_counts.keys():
             f.write("%s\t%d\n" % (key, bad_actors_flip_counts[key]))
 
@@ -174,12 +174,12 @@ def run_bad_actors(user_politics, constraint_days=365, flip_flops=1):
 
 if __name__ == '__main__':
 
-    time_constraints = [365, 270, 180, 90,30]
+    time_constraints = [365, 270, 180, 90, 30]
     bad_actor_counts = dict.fromkeys(time_constraints)
 
     all_politics = get_all_user_politics()
-    #print(all_politics)
-    bad_actor_counts=run_bad_actors(all_politics, constraint_days=30, flip_flops=1)
+    # print(all_politics)
+    bad_actor_counts = run_bad_actors(all_politics, constraint_days=30, flip_flops=1)
     for time_constraint in time_constraints:
         print("Starting on time constraint: {}".format(time_constraint))
         bad_actor_count = run_bad_actors(all_politics, constraint_days=time_constraint, flip_flops=1)
@@ -218,5 +218,3 @@ if __name__ == '__main__':
     }
 
     plot_total_bad_actors_w_constraints(bad_actors_counts)
-
-
