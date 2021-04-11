@@ -2,9 +2,15 @@ import bz2
 import io
 import json
 import lzma
+import sys
+from glob import glob
 from json import JSONDecodeError
 
 import zstandard as zstd
+
+sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
+
+from src.data.reddit_submission import Submission
 
 """
     Functions to work with the raw compressed Reddit data
@@ -33,7 +39,8 @@ def read_submissions(file_name):
     file_pointer = get_file_handle(file_name)
     for count, line in enumerate(file_pointer):
         try:
-            submission = json.loads(file_pointer.readline().strip())
+            submission_json = json.loads(file_pointer.readline().strip())
+            submission = Submission(submission_json)
             yield submission
 
         except (JSONDecodeError, AttributeError) as e:
@@ -43,3 +50,14 @@ def read_submissions(file_name):
             print("Completed {} lines for file {}".format(count, file_name))
 
     file_pointer.close()
+
+
+def get_all_raw_files():
+    print("Reading in raw file names")
+    files = glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
+    files.extend(glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
+    files.extend(glob('/shared/2/datasets/reddit-dump-all/RC/*.bz2'))
+    files.extend(glob('/shared/2/datasets/reddit-dump-all/RS/*.bz2'))
+    files.extend(glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
+    print("Total of {} files".format(len(files)))
+    return files
