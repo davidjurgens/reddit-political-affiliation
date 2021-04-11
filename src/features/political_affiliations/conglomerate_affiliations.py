@@ -150,6 +150,7 @@ def get_dev_political_affiliations():
 
 
 def get_all_political_users():
+    print("Grabbing all political users")
     silver_data, gold_data, flair_data = grab_all_data_sources()
     df = build_df(silver_data, gold_data, flair_data)
     return set(df['username'].tolist())
