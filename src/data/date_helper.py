@@ -43,7 +43,7 @@ def read_submissions(file_name):
             submission = Submission(submission_json)
             yield submission
 
-        except (JSONDecodeError, AttributeError) as e:
+        except Exception as e:
             print("Failed to parse line: {} with error: {}".format(line, e))
 
         if count % 1000000 == 0 and count > 0:

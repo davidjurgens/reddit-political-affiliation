@@ -8,9 +8,12 @@ class Submission:
         self.created = submission_json['created_utc']
         self.score = submission_json['score']
         self.controversiality = submission_json['controversiality']
-        self.total_awards = submission_json['total_awards_received']
         self.gilded = submission_json['gilded']
         self.text = " ".join(submission_json['body'].split()).lower()
+        if 'total_awards_received' in submission_json:
+            self.total_awards = submission_json['total_awards_received']
+        else:
+            self.total_awards = 0
 
         self.num_comments = 0
         if self.is_post():
