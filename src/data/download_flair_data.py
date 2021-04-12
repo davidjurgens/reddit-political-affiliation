@@ -16,7 +16,7 @@ def parse_submissions(fname):
 
     user_flairs = defaultdict(lambda: defaultdict(list))
     for submission in read_submissions(fname):
-        username, flair, subreddit = submission['author'], submission['author_flair_text'], submission['subreddit']
+        username, flair, subreddit = submission.username, submission.flair, submission.subreddit
 
         if flair and flair not in user_flairs[username][subreddit]:
             user_flairs[username][subreddit].append(flair)

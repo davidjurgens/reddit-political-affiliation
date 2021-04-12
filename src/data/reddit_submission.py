@@ -7,17 +7,35 @@ class Submission:
         self.subreddit = submission_json['subreddit']
         self.created = submission_json['created_utc']
         self.score = submission_json['score']
-        self.controversiality = submission_json['controversiality']
-        self.gilded = submission_json['gilded']
-        self.text = " ".join(submission_json['body'].split()).lower()
+
+        if 'score' in submission_json:
+            self.score = int(submission_json['score'])
+        else:
+            self.score = 0
+
+        if 'controversiality' in submission_json:
+            self.controversiality = int(submission_json['controversiality'])
+        else:
+            self.controversiality = 0
+
         if 'total_awards_received' in submission_json:
-            self.total_awards = submission_json['total_awards_received']
+            self.total_awards = int(submission_json['total_awards_received'])
         else:
             self.total_awards = 0
 
+        if 'gilded' in submission_json:
+            self.gilded = int(submission_json['gilded'])
+        else:
+            self.gilded = 0
+
+        if 'body' in submission_json:
+            self.text = " ".join(submission_json['body'].split()).lower()
+        else:
+            self.text = ""
+
         self.num_comments = 0
         if self.is_post():
-            self.num_comments = submission_json['num_comments']
+            self.num_comments = int(submission_json['num_comments'])
 
     def is_post(self):
         return "num_comments" in self.submission_json
