@@ -12,21 +12,19 @@ from src.features.political_affiliations.conglomerate_affiliations import get_al
 from src.features.bad_actors.bad_actors import read_in_bad_actors_from_tsv
 
 
-def collect_user_submission_data(month_files, users):
-    user_features = defaultdict(list)
-    for m_file in month_files:
-        print("Collecting user features for month: {}".format(m_file))
+def collect_user_submission_data(month_file, users, user_features):
+    print("Collecting user features for month: {}".format(month_file))
 
-        for submission in read_submissions(m_file):
-            if submission.username in users:
-                if submission.is_post():
-                    submission_type = 'post'
-                else:
-                    submission_type = 'comment'
-                entry = {'username': submission.username, 'subreddit': submission.subreddit, 'score': submission.score,
-                         'submission_type': submission_type, 'gilded': submission.gilded,
-                         'total_awards': submission.total_awards, 'controversiality': submission.controversiality}
-                user_features[submission.username].append(entry)
+    for submission in read_submissions(month_file):
+        if submission.username in users:
+            if submission.is_post():
+                submission_type = 'post'
+            else:
+                submission_type = 'comment'
+            entry = {'username': submission.username, 'subreddit': submission.subreddit, 'score': submission.score,
+                     'submission_type': submission_type, 'gilded': submission.gilded,
+                     'total_awards': submission.total_awards, 'controversiality': submission.controversiality}
+            user_features[submission.username].append(entry)
 
     return user_features
 
@@ -87,12 +85,13 @@ def get_time_of_day(created_utc):
 
 
 def run_collect(users, files, out_tsv):
-    print(
-        "Collecting user features for {} users over {} files and saving to {}".format(len(users), len(files), out_tsv))
-    user_features = collect_user_submission_data(files, users)
-    df = build_user_features_df(user_features)
-    print("Saving features dataframe to TSV")
-    df.to_csv(out_tsv, sep='\t')
+    print("Collecting user features for {} users over {} files and saving to {}".format(len(users), len(files), out_tsv))
+    user_features = defaultdict(list)
+    for m_file in files:
+        user_features = collect_user_submission_data(m_file, users, user_features)
+        df = build_user_features_df(user_features)
+        print("Saving features dataframe to TSV")
+        df.to_csv(out_tsv, sep='\t')
 
 
 if __name__ == '__main__':
