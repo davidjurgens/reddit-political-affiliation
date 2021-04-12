@@ -22,7 +22,7 @@ def collect_user_submission_data(month_file, users, user_features):
             else:
                 submission_type = 'comment'
             entry = {'username': submission.username, 'subreddit': submission.subreddit, 'score': submission.score,
-                     'submission_type': submission_type, 'gilded': submission.gilded,
+                     'submission_type': submission_type, 'gilded': submission.gilded, 'created': submission.created,
                      'total_awards': submission.total_awards, 'controversiality': submission.controversiality}
             user_features[submission.username].append(entry)
 
