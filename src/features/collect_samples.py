@@ -30,10 +30,10 @@ def get_samples_from_file(raw_file, users, count):
             entry = {'username': user, 'subreddit': subreddit, 'created': created, 'text': text}
             collected.append(entry)
 
-    if len(collected) % 1000 == 0:
-        print("Collected {} samples from file {}".format(len(collected), raw_file))
-    if len(collected) >= count:
-        return collected
+        if len(collected) % 10000 == 0:
+            print("Collected {} samples from file {}".format(len(collected), raw_file))
+        if len(collected) >= count:
+            return collected
 
     # Run out of data before hitting the count
     return collected
@@ -126,4 +126,3 @@ if __name__ == '__main__':
     print("Grabbing submissions for political users")
     political_user_samples = collect_submissions(files, political_users, count=100000)
     output_samples_to_tsv(political_user_samples, output_directory + 'political_samples.tsv')
-
