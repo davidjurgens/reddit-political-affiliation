@@ -10,9 +10,11 @@ sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 from src.data.date_helper import read_submissions, get_all_raw_files
 from src.features.political_affiliations.conglomerate_affiliations import get_all_political_users
 from src.features.bad_actors.bad_actors import read_in_bad_actors_from_tsv
+from src.features.collect_samples import read_usernames_from_tsv
 
 
 def collect_user_submission_data(month_file, users, user_features):
+    assert type(users) is dict or type(users) is set
     print("Collecting user features for month: {}".format(month_file))
 
     for submission in read_submissions(month_file):
@@ -25,7 +27,6 @@ def collect_user_submission_data(month_file, users, user_features):
                      'submission_type': submission_type, 'gilded': submission.gilded, 'created': submission.created,
                      'total_awards': submission.total_awards, 'controversiality': submission.controversiality}
             user_features[submission.username].append(entry)
-
     return user_features
 
 
@@ -85,7 +86,8 @@ def get_time_of_day(created_utc):
 
 
 def run_collect(users, files, out_tsv):
-    print("Collecting user features for {} users over {} files and saving to {}".format(len(users), len(files), out_tsv))
+    print(
+        "Collecting user features for {} users over {} files and saving to {}".format(len(users), len(files), out_tsv))
     user_features = defaultdict(list)
     for m_file in files:
         user_features = collect_user_submission_data(m_file, users, user_features)
@@ -94,8 +96,30 @@ def run_collect(users, files, out_tsv):
         df.to_csv(out_tsv, sep='\t')
 
 
+def read_in_non_pol_user_features():
+    in_file = '/shared/0/projects/reddit-political-affiliation/data/user-features/all_non_political.tsv'
+    return pd.read_csv(in_file, sep='\t')
+
+
+def read_in_pol_user_features():
+    in_file = '/shared/0/projects/reddit-political-affiliation/data/user-features/all_political.tsv'
+    return pd.read_csv(in_file, sep='\t')
+
+
+def read_in_bad_actor_features():
+    in_file = '/shared/0/projects/reddit-political-affiliation/data/user-features/bad_actors.tsv'
+    return pd.read_csv(in_file, sep='\t')
+
+
 if __name__ == '__main__':
     files = get_all_raw_files()
+
+    non_political_users = read_usernames_from_tsv(
+        '/shared/0/projects/reddit-political-affiliation/data/sample-submissions/non_political_usernames.tsv')
+    print("Total of {} non political users".format(len(non_political_users)))
+    run_collect(non_political_users, files,
+                out_tsv='/shared/0/projects/reddit-political-affiliation/data/user-features/all_non_political.tsv')
+
     users = get_all_political_users()
     print("Total number of users: {}".format(len(users)))
     run_collect(users, files,
