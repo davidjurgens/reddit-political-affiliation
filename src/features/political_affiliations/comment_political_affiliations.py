@@ -119,10 +119,13 @@ def user_politics_to_tsv(user_politics, out_file):
     with open(out_file, 'w') as f:
         for user, user_politics in user_politics.items():
             for entry in user_politics:
-                f.write(
-                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['match'], entry['match_type'],
+                if "match" in entry:
+                    f.write(
+                        "{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['match'], entry['match_type'],
+                                                              entry['subreddit'], entry['created'], entry['text']))
+                else:
+                    f.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['match_type'],
                                                           entry['subreddit'], entry['created'], entry['text']))
-
 
 def read_in_user_politics(in_files):
     user_politics = defaultdict(list)
@@ -132,10 +135,16 @@ def read_in_user_politics(in_files):
         with open(in_file, 'r') as f:
             for line in f:
                 try:
-                    user, politics, match, match_type, subreddit, created, text = line.split('\t')
-                    entry = {'politics': politics, 'match_type': match_type, 'subreddit': subreddit,
-                             'created': created.strip()}
-                    user_politics[user].append(entry)
+                    if len(line.split('\t')) == 7:
+                        user, politics, match, match_type, subreddit, created, text = line.split('\t')
+                        entry = {'politics': politics, 'match_type': match_type, 'subreddit': subreddit,
+                                 'created': created.strip(), 'text': text}
+                        user_politics[user].append(entry)
+                    else:
+                        user, politics, match_type, subreddit, created, text = line.split('\t')
+                        entry = {'politics': politics, 'match_type': match_type, 'subreddit': subreddit,
+                                 'created': created.strip(), 'text': text}
+                        user_politics[user].append(entry)
                 except Exception:
                     pass
 
