@@ -14,7 +14,6 @@ from src.features.collect_samples import read_usernames_from_tsv
 
 
 def collect_user_submission_data(month_file, users, user_features):
-    assert type(users) is dict or type(users) is set
     print("Collecting user features for month: {}".format(month_file))
 
     for submission in read_submissions(month_file):
@@ -55,7 +54,8 @@ def build_user_features_df(user_features):
         row = {'username': user, 'total_controversiality': total_controversiality,
                'total_awards': total_awards, 'total_score': total_score, 'total_gilded': total_gilded,
                'morning_post_count': morning_post_count, 'afternoon_post_count': afternoon_post_count,
-               'evening_post_count': evening_post_count, 'night_post_count': night_post_count}
+               'evening_post_count': evening_post_count, 'night_post_count': night_post_count, 'post_count': post_count,
+               'comment_count': comment_count}
         rows.append(row)
 
     return pd.DataFrame(rows)
@@ -98,35 +98,34 @@ def run_collect(users, files, out_tsv):
 
 def read_in_non_pol_user_features():
     in_file = '/shared/0/projects/reddit-political-affiliation/data/user-features/all_non_political.tsv'
-    return pd.read_csv(in_file, sep='\t')
+    return pd.read_csv(in_file, sep='\t', index_col=0)
 
 
 def read_in_pol_user_features():
     in_file = '/shared/0/projects/reddit-political-affiliation/data/user-features/all_political.tsv'
-    return pd.read_csv(in_file, sep='\t')
+    return pd.read_csv(in_file, sep='\t', index_col=0)
 
 
 def read_in_bad_actor_features():
     in_file = '/shared/0/projects/reddit-political-affiliation/data/user-features/bad_actors.tsv'
-    return pd.read_csv(in_file, sep='\t')
+    return pd.read_csv(in_file, sep='\t', index_col=0)
 
 
 if __name__ == '__main__':
     files = get_all_raw_files()
 
-    non_political_users = read_usernames_from_tsv(
-        '/shared/0/projects/reddit-political-affiliation/data/sample-submissions/non_political_usernames.tsv')
-    print("Total of {} non political users".format(len(non_political_users)))
-    run_collect(non_political_users, files,
-                out_tsv='/shared/0/projects/reddit-political-affiliation/data/user-features/all_non_political.tsv')
+    bad_actors = read_in_bad_actors_from_tsv(
+        ['/shared/0/projects/reddit-political-affiliation/data/bad-actors/bad_actors_365_days_1_flip_flop.tsv'])
+    run_collect(bad_actors, files,
+                out_tsv='/shared/0/projects/reddit-political-affiliation/data/user-features/bad_actors.tsv')
 
     users = get_all_political_users()
     print("Total number of users: {}".format(len(users)))
     run_collect(users, files,
                 out_tsv='/shared/0/projects/reddit-political-affiliation/data/user-features/all_political.tsv')
 
-    # Repeat for bad actors
-    bad_actors = read_in_bad_actors_from_tsv(
-        ['/shared/0/projects/reddit-political-affiliation/data/bad-actors/bad_actors_365_days_1_flip_flop.tsv'])
-    run_collect(bad_actors, files,
-                out_tsv='/shared/0/projects/reddit-political-affiliation/data/user-features/bad_actors.tsv')
+    non_political_users = read_usernames_from_tsv(
+        '/shared/0/projects/reddit-political-affiliation/data/sample-submissions/non_political_usernames.tsv')
+    print("Total of {} non political users".format(len(non_political_users)))
+    run_collect(non_political_users, files,
+                out_tsv='/shared/0/projects/reddit-political-affiliation/data/user-features/all_non_political.tsv')
