@@ -11,21 +11,22 @@ from src.data.date_helper import read_submissions, get_all_raw_files
 from src.features.political_affiliations.conglomerate_affiliations import get_all_political_users
 from src.features.bad_actors.bad_actors import read_in_bad_actors_from_tsv
 from src.features.collect_samples import read_usernames_from_tsv
+from src.models.psm.features import top_subreddits, political_subreddits
 
 
 def collect_user_submission_data(month_file, users, user_features):
-    assert type(users) is dict or type(users) is set
     print("Collecting user features for month: {}".format(month_file))
 
     for submission in read_submissions(month_file):
         if submission.username in users:
-            if submission.is_post():
-                submission_type = 'post'
-            else:
-                submission_type = 'comment'
+            submission_type = 'post' if submission.is_post() else 'comment'
+            top_subreddit = 1 if submission.subreddit in top_subreddits else 0
+            pol_subreddit = 1 if submission.subreddit in political_subreddits else 0
+
             entry = {'username': submission.username, 'subreddit': submission.subreddit, 'score': submission.score,
                      'submission_type': submission_type, 'gilded': submission.gilded, 'created': submission.created,
-                     'total_awards': submission.total_awards, 'controversiality': submission.controversiality}
+                     'total_awards': submission.total_awards, 'controversiality': submission.controversiality,
+                     'top_subreddit': top_subreddit, 'political_subreddit': pol_subreddit}
             user_features[submission.username].append(entry)
     return user_features
 
@@ -39,12 +40,15 @@ def build_user_features_df(user_features):
     for user, features in user_features.items():
         post_count, comment_count, total_awards, total_gilded, \
         total_controversiality, total_score = 0, 0, 0, 0, 0, 0
+        top_subreddit_participation, pol_subreddit_participation = 0, 0
         morning_post_count, afternoon_post_count, evening_post_count, night_post_count = 0, 0, 0, 0
         for entry in features:
             total_controversiality += int(entry['controversiality'])
             total_awards += int(entry['total_awards'])
             total_score += int(entry['score'])
             total_gilded += int(entry['gilded'])
+            top_subreddit_participation += entry['top_subreddit']
+            pol_subreddit_participation += entry['political_subreddit']
             morning_post_count, afternoon_post_count, evening_post_count, night_post_count = get_time_of_day_counts(
                 features)
             if entry['submission_type'] == 'post':
@@ -52,10 +56,12 @@ def build_user_features_df(user_features):
             else:
                 comment_count += 1
 
-        row = {'username': user, 'total_controversiality': total_controversiality,
-               'total_awards': total_awards, 'total_score': total_score, 'total_gilded': total_gilded,
-               'morning_post_count': morning_post_count, 'afternoon_post_count': afternoon_post_count,
-               'evening_post_count': evening_post_count, 'night_post_count': night_post_count}
+        row = {'username': user, 'total_controversiality': total_controversiality, 'total_posts': post_count,
+               'total_comments': comment_count, 'total_awards': total_awards, 'total_score': total_score,
+               'total_gilded': total_gilded, 'morning_post_count': morning_post_count, 'afternoon_post_count':
+                   afternoon_post_count, 'evening_post_count': evening_post_count, 'night_post_count': night_post_count,
+               'top_subreddit_participation': top_subreddit_participation,
+               'political_subreddit_participation': pol_subreddit_participation}
         rows.append(row)
 
     return pd.DataFrame(rows)
@@ -114,6 +120,12 @@ def read_in_bad_actor_features():
 if __name__ == '__main__':
     files = get_all_raw_files()
 
+    # Repeat for bad actors
+    bad_actors = read_in_bad_actors_from_tsv(
+        ['/shared/0/projects/reddit-political-affiliation/data/bad-actors/bad_actors_90_days_1_flip_flop.tsv'])
+    run_collect(bad_actors, files,
+                out_tsv='/shared/0/projects/reddit-political-affiliation/data/user-features/bad_actors.tsv')
+
     non_political_users = read_usernames_from_tsv(
         '/shared/0/projects/reddit-political-affiliation/data/sample-submissions/non_political_usernames.tsv')
     print("Total of {} non political users".format(len(non_political_users)))
@@ -125,8 +137,3 @@ if __name__ == '__main__':
     run_collect(users, files,
                 out_tsv='/shared/0/projects/reddit-political-affiliation/data/user-features/all_political.tsv')
 
-    # Repeat for bad actors
-    bad_actors = read_in_bad_actors_from_tsv(
-        ['/shared/0/projects/reddit-political-affiliation/data/bad-actors/bad_actors_365_days_1_flip_flop.tsv'])
-    run_collect(bad_actors, files,
-                out_tsv='/shared/0/projects/reddit-political-affiliation/data/user-features/bad_actors.tsv')
