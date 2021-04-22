@@ -157,23 +157,61 @@ def run_bad_actors(user_politics, constraint_days=365, flip_flops=1):
 
     print("Total number of bad actors: {}".format(len(bad_actors)))
 
-    out_dir = "/shared/0/projects/reddit-political-affiliation/data/bad-actors/"
-    file_name = out_dir + 'bad_actors_' + str(constraint_days) + '_days_' + str(flip_flops) + '_flip_flop.tsv'
-    print("Outputting bad actors as TSV to: {}".format(file_name))
-    save_bad_actors_to_tsv(bad_actors, file_name)
+    out_file = "/shared/0/projects/reddit-political-affiliation/data/bad-actors/bad_actors_{}_days_{}_flip_flop.tsv" \
+        .format(constraint_days, flip_flops)
+    print("Outputting bad actors as TSV to: {}".format(out_file))
+    save_bad_actors_to_tsv(bad_actors, out_file)
 
     return len(bad_actors)
 
 
+def read_in_bad_actor_usernames(time_constraint, flip_flops):
+    in_file = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/bad_actors_{}_days_{}_flip_flop.tsv' \
+        .format(time_constraint, flip_flops)
+    return set(read_in_bad_actors_from_tsv([in_file]).keys())
+
+
+def get_genuine_political_flips(all_political_data):
+    """ People who change between parties only once and it happens over 365+ days"""
+    print("Computing bad actors without time constraint")
+    bad_actors = get_bad_actors(all_political_data, flip_flops=1)
+
+    genuine_actors = defaultdict(list)
+
+    for user, political_data in bad_actors.items():
+        rep_timestamps, dem_timestamps = [], []
+        for entry in political_data:
+            # Grab all rep and dem declaration timestamps
+            if entry['politics'] == 'Republican':
+                rep_timestamps.append(entry['created'])
+            else:
+                dem_timestamps.append(entry['created'])
+
+        if min_days_between_timestamps(rep_timestamps, dem_timestamps) >= 365:
+            genuine_actors[user] = political_data
+
+    print("Number of genuine actors: {}".format(len(genuine_actors)))
+    out_file = '/shared/0/projects/reddit-political-affiliation/data/bad-actors/genuine_actors.tsv'
+    save_bad_actors_to_tsv(genuine_actors, out_file)
+    return genuine_actors
+
+
+def get_genuine_actors():
+    genuine_actors = read_in_bad_actors_from_tsv(
+        ['/shared/0/projects/reddit-political-affiliation/data/bad-actors/genuine_actors.tsv'])
+    return set(genuine_actors.keys())
+
+
 if __name__ == '__main__':
-    time_constraints = [365, 270, 180, 90]
+    time_constraints = [365]
     bad_actor_counts = dict.fromkeys(time_constraints)
 
     all_politics = get_all_user_politics()
+    get_genuine_political_flips(all_politics)
 
-    for time_constraint in time_constraints:
-        print("Starting on time constraint: {}".format(time_constraint))
-        bad_actor_count = run_bad_actors(all_politics, constraint_days=time_constraint, flip_flops=5)
-        bad_actor_counts[time_constraint] = bad_actor_count
-
-    plot_total_bad_actors_w_constraints(bad_actor_counts)
+    # for time_constraint in time_constraints:
+    #     print("Starting on time constraint: {}".format(time_constraint))
+    #     bad_actor_count = run_bad_actors(all_politics, constraint_days=time_constraint, flip_flops=1)
+    #     bad_actor_counts[time_constraint] = bad_actor_count
+    #
+    # plot_total_bad_actors_w_constraints(bad_actor_counts)
