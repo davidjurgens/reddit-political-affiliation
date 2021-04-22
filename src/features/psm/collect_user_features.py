@@ -13,7 +13,6 @@ from src.features.bad_actors.bad_actors import read_in_bad_actors_from_tsv
 from src.features.collect_samples import read_usernames_from_tsv
 from src.features.psm.features import top_subreddits, political_subreddits
 
-
 """ Script to collect behavioral user features like number of posts or total karma """
 
 
@@ -106,7 +105,7 @@ def get_time_of_day(created_utc):
 def run_collect(pol_users, non_pol_users, bad_actors, files, out_dir):
     pol_user_features, non_pol_user_features, bad_actor_features = defaultdict(list), defaultdict(list), defaultdict(
         list)
-    for m_file in files:
+    for m_file in files[::-1]:
         pol_user_features, non_pol_user_features, bad_actor_features = \
             collect_user_submission_data(m_file, pol_users, non_pol_users, bad_actors, pol_user_features,
                                          non_pol_user_features, bad_actor_features)
@@ -121,17 +120,23 @@ def run_collect(pol_users, non_pol_users, bad_actors, files, out_dir):
 
 def read_in_non_pol_user_features():
     in_file = '/shared/0/projects/reddit-political-affiliation/data/user-features/all_non_political.tsv'
-    return pd.read_csv(in_file, sep='\t')
+    df = pd.read_csv(in_file, sep='\t', index_col=0)
+    df = df.fillna(0)
+    return df
 
 
 def read_in_pol_user_features():
     in_file = '/shared/0/projects/reddit-political-affiliation/data/user-features/all_political.tsv'
-    return pd.read_csv(in_file, sep='\t')
+    df = pd.read_csv(in_file, sep='\t', index_col=0)
+    df = df.fillna(0)
+    return df
 
 
 def read_in_bad_actor_features():
     in_file = '/shared/0/projects/reddit-political-affiliation/data/user-features/bad_actors.tsv'
-    return pd.read_csv(in_file, sep='\t')
+    df = pd.read_csv(in_file, sep='\t', index_col=0)
+    df = df.fillna(0)
+    return df
 
 
 if __name__ == '__main__':
