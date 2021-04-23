@@ -31,7 +31,11 @@ class SubredditUserDataset(Dataset):
             if i >= num_users:
                 break
 
-            politics = user_to_politics[user] # No politics will have a label of -1
+            if user in user_to_politics:
+                politics = user_to_politics[user]
+            else:
+                politics = -1
+
             self.user_to_idx[user] = len(self.user_to_idx)
             user_idx = self.user_to_idx[user]
 
