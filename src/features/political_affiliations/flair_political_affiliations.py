@@ -80,6 +80,12 @@ def read_in_flair_affiliations(in_files):
     return user_flairs
 
 
+def get_all_flair_users():
+    flair_files = glob.glob('/shared/0/projects/reddit-political-affiliation/data/flair-affiliations/*.tsv')
+    flair_affiliations = read_in_flair_affiliations(flair_files)
+    return set(flair_affiliations.keys())
+
+
 if __name__ == '__main__':
     files = glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
