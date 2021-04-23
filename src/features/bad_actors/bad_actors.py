@@ -215,3 +215,16 @@ if __name__ == '__main__':
     #     bad_actor_counts[time_constraint] = bad_actor_count
     #
     # plot_total_bad_actors_w_constraints(bad_actor_counts)
+
+    time_constraints = [365, 270, 180, 90, 30]
+    bad_actor_counts = dict.fromkeys(time_constraints)
+
+    all_politics = get_all_user_politics()
+
+    for time_constraint in time_constraints:
+        print("Starting on time constraint: {}".format(time_constraint))
+        bad_actor_count = run_bad_actors(all_politics, constraint_days=time_constraint, flip_flops=1)
+        bad_acstor_counts[time_constraint] = bad_actor_count
+
+    plot_total_bad_actors_w_constraints(bad_actor_counts)
+
