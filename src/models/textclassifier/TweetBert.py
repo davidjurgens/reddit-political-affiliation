@@ -102,7 +102,7 @@ class Intents(Dataset):
 #         bert_output=self.maxpool(self.BertModel(input,attention_mask=attention_mask)[0].permute(0,2,1)).squeeze(2)
 #         return [self.lin1(self.relu(bert_output))]
 
-def evaluate_by_user(model,data):
+def evaluate_by_user(model,data,name=""):
     correct = 0
     total = 0
     y_pred = []
@@ -133,9 +133,14 @@ def evaluate_by_user(model,data):
 
     #print(user_name_list,y_pred,y_true,pred_label)
     result_pd=pd.DataFrame({'username':user_name_list,'party_score':y_pred,'predict_politics':pred_label,'politics':y_true})
+    saved_path="/shared/0/projects/reddit-political-affiliation/data/bert-text-classify/users_prediction/"
+    if len(name)>1:
+        pd.to_csv(saved_path+model_name+"_"+name+".tsv")
     result_pd=result_pd.sort_values(by=["username","party_score"])
     #print(result_pd)
     result_pd=result_pd.drop_duplicates(subset="username",keep="last").reset_index()
+    if len(name)>1:
+        pd.to_csv(saved_path+model_name+"_most_confident_"+name+".tsv")
     #print (result_pd)
 
     user_y_pred=list(result_pd['predict_politics'])
@@ -183,12 +188,12 @@ comments_dir = '/shared/0/projects/reddit-political-affiliation/data/bert-text-c
 
 
 if __name__ == '__main__':
-    dv="cuda:3"
-    load_from=-1
+    dv="cuda:4"
+    load_from=4
     test_mode=1
 
     in_file = '/shared/0/projects/reddit-political-affiliation/data/interactions/all_comments_filtered.tsv'
-    comments = read_in_comments(in_file,count=10000000)
+    comments = read_in_comments(in_file,count=-1)
     df_comments = pd.DataFrame(comments)
 
     cong_dir = '/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/'
@@ -239,7 +244,7 @@ if __name__ == '__main__':
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
     model = RobertaForSequenceClassification(config)
 
-    only_politics = True
+    only_politics = False
     if only_politics:
         merged_train = merged_train[merged_train['subreddit_x'] == 'politics']
         #print (merged_train)
@@ -247,7 +252,7 @@ if __name__ == '__main__':
         #merged_dev = merged_train[merged_dev['subreddit'] == 'politics']
         model_name += "_politics"
 
-    training_name='flair'
+    training_name='silver'
     model_name+="_"+training_name
     training_data=merged_train[merged_train['source']==training_name].reset_index()
 
@@ -272,7 +277,7 @@ if __name__ == '__main__':
     train_set = Intents(training_data)
     test_set = Intents(merged_test)
     dev_set = Intents(merged_dev)
-    params = {'batch_size': 64, 'shuffle': True, 'drop_last': False, 'num_workers': 1}
+    params = {'batch_size': 64, 'shuffle': True, 'drop_last': False, 'num_workers': 0}
     train_loader = DataLoader(train_set, **params)
     test_loader = DataLoader(test_set, **params)
     dev_loader = DataLoader(dev_set, **params)
@@ -294,7 +299,7 @@ if __name__ == '__main__':
 
         try:
             best = 0
-            for epoch in range(max_epochs):
+            for epoch in range(max_epochs-load_from-1):
                 model.train()
                 print("EPOCH -- {}".format(epoch))
                 for i, (sent, mask, label,_) in tqdm(enumerate(train_loader), total=iter_length):
@@ -326,10 +331,10 @@ if __name__ == '__main__':
 
         except KeyboardInterrupt:
             torch.save(model.state_dict(), comments_dir + model_name +"_Text_Classifier_"  + "finished.pt")
-            print("Evaluation on test set:")
-            mc = evaluate(model, test_loader)
-        print("Evaluation on test set:")
-        mc = evaluate(model, test_loader)
+            #print("Evaluation on test set:")
+            #mc = evaluate(model, test_loader)
+        #print("Evaluation on test set:")
+        #mc = evaluate(model, test_loader)
     else:
         model.load_state_dict(torch.load(comments_dir+ model_name +"_Text_Classifier_9.pt" , map_location=device))
         model.cuda()
@@ -348,10 +353,10 @@ if __name__ == '__main__':
         flair_loader = DataLoader(flair_set, **params)
 
         print("Evaluating on gold...")
-        mc = evaluate_by_user(model, gold_loader)
+        mc = evaluate_by_user(model, gold_loader,"gold")
         print("Evaluating on silver...")
-        mc = evaluate_by_user(model, silver_loader)
+        mc = evaluate_by_user(model, silver_loader,"silver")
         print("Evaluating on flair...")
-        mc = evaluate_by_user(model, flair_loader)
-        print("Evaluating on all test...")
-        mc = evaluate(model, test_loader)
+        mc = evaluate_by_user(model, flair_loader,"flair")
+        # print("Evaluating on all test...")
+        # mc = evaluate(model, test_loader)
