@@ -51,13 +51,6 @@ top_subreddits = [
     'nba'
 ]
 
-time_mappings = {
-    "morning": 0,
-    "afternoon": 1,
-    "evening": 2,
-    "night": 3
-}
-
 
 def get_time_of_day(created_utc):
     hour = datetime.fromtimestamp(int(created_utc), pytz.UTC).hour

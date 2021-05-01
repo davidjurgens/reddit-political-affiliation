@@ -39,4 +39,5 @@ print(labels_matrix)
 print("Krippendorff's alpha for nominal metric: ", krippendorff.alpha(reliability_data=labels_matrix,
                                                                       level_of_measurement='nominal'))
 
-# Compute pairwise agreements
+# List indices of disagreements
+

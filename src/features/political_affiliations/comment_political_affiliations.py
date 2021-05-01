@@ -121,11 +121,13 @@ def user_politics_to_tsv(user_politics, out_file):
             for entry in user_politics:
                 if "match" in entry:
                     f.write(
-                        "{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['match'], entry['match_type'],
+                        "{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['match'],
+                                                              entry['match_type'],
                                                               entry['subreddit'], entry['created'], entry['text']))
                 else:
                     f.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(user, entry['politics'], entry['match_type'],
-                                                          entry['subreddit'], entry['created'], entry['text']))
+                                                              entry['subreddit'], entry['created'], entry['text']))
+
 
 def read_in_user_politics(in_files):
     user_politics = defaultdict(list)
@@ -169,6 +171,18 @@ def count_regex_matches(in_files):
 
     for k, v in match_counter.items():
         print("Regex pattern {} has {} matches".format(k, v))
+
+
+def get_all_gold_users():
+    gold_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/gold/*.tsv")
+    gold_data = read_in_user_politics(gold_files)
+    return set(gold_data.keys())
+
+
+def get_all_silver_users():
+    silver_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/silver/*.tsv")
+    silver_data = read_in_user_politics(silver_files)
+    return set(silver_data.keys())
 
 
 if __name__ == '__main__':
