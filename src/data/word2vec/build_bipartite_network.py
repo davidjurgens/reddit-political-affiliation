@@ -14,6 +14,7 @@ from src.features.political_affiliations.flair_political_affiliations import get
 from src.features.political_affiliations.comment_political_affiliations import get_all_gold_users, get_all_silver_users
 
 NON_POLITICAL_USERS_MULTIPLE = 5
+OUT_DIR = "/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/"
 
 
 def build_bipartite_network(month_file, n_subreddits, min_posts, out_file, sources=None):
@@ -153,12 +154,12 @@ if __name__ == '__main__':
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.bz2'))
 
-    min_posts = 10
-    n_subreddits = 1000
+    # Run
+    min_posts = 5
+    n_subreddits = 25000
 
     for m_file in files[::-1]:
         print("Using month file: {}".format(m_file))
-        out_dir = "/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/"
-        out_file = out_dir + get_year_month(m_file) + "_{}subs_{}posts.tsv".format(n_subreddits, min_posts)
+        out_file = OUT_DIR + get_year_month(m_file) + "_{}subs_{}posts.tsv".format(n_subreddits, min_posts)
 
         build_bipartite_network(m_file, n_subreddits, min_posts, out_file)
