@@ -20,7 +20,8 @@ def get_political_user_comment_ids(files, political_users):
                 text = submission['body']
                 text = " ".join(text.split())
                 politics = political_users[author]
-                political_comment = PoliticalComment(comment_id, parent_id, author, subreddit, created_utc, politics, text)
+                political_comment = PoliticalComment(comment_id, parent_id, author, subreddit, created_utc, politics,
+                                                     text)
                 yield political_comment
 
 

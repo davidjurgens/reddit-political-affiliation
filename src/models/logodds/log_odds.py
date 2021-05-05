@@ -5,7 +5,6 @@ import math
 import sys
 from collections import defaultdict
 
-
 # Each input file (first, second, prior) is a dict with words as keys and counts as values
 
 parser = argparse.ArgumentParser(

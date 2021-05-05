@@ -227,4 +227,3 @@ if __name__ == '__main__':
         bad_actor_counts[time_constraint] = bad_actor_count
 
     plot_total_bad_actors_w_constraints(bad_actor_counts)
-

@@ -1,12 +1,11 @@
 import sys
-import torch
-from torch import nn
-import torch.optim as optim
-from torchtext import data
 from collections import defaultdict
+
 import pandas as pd
+import torch
+import torch.optim as optim
+from torch import nn
 from torchtext.legacy.data import Field, LabelField, TabularDataset, BucketIterator
-from collections import defaultdict, Counter
 from tqdm import tqdm
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')

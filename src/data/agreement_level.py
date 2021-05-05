@@ -37,6 +37,8 @@ david_labels = build_array_of_labels(david)
 kenan_labels = build_array_of_labels(kenan)
 
 labels_matrix = np.matrix([bohan_labels, david_labels, kenan_labels])
+
+
 # print("Krippendorff's alpha for nominal metric: ", krippendorff.alpha(reliability_data=labels_matrix,
 #                                                                       level_of_measurement='nominal'))
 

@@ -1,6 +1,6 @@
 import sys
-from glob import glob
 from collections import Counter, defaultdict
+from glob import glob
 
 import pandas as pd
 
@@ -88,14 +88,18 @@ def save_silver_users_only(network_df, out_file):
 
 
 if __name__ == '__main__':
-    network_files = glob(OUT_DIR + 'general/*_1000subs_10posts.tsv')
-    print(len(network_files))
+    network_files = glob(OUT_DIR + 'flair/*_1000subs_10posts.tsv')
+    print(network_files)
+    all_flair = combine_multiple_months(glob(OUT_DIR + 'flair/*_1000subs_10posts.tsv'))
+    all_flair.to_csv(OUT_DIR + 'flair/all_flair_1000subs_10posts.tsv')
 
-    for network_file in network_files:
-        out_file = network_file.rsplit('/', 1)[-1]
-        print("Working on: {}".format(out_file))
-        network_df = pd.read_csv(network_file, sep='\t', index_col=False)
-        save_network_w_subreddit_political_labels(network_df, out_file)
-        save_flair_users_only(network_df, out_file)
-        save_gold_users_only(network_df, out_file)
-        save_silver_users_only(network_df, out_file)
+    # print(len(network_files))
+    #
+    # for network_file in network_files:
+    #     out_file = network_file.rsplit('/', 1)[-1]
+    #     print("Working on: {}".format(out_file))
+    #     network_df = pd.read_csv(network_file, sep='\t', index_col=False)
+    #     save_network_w_subreddit_political_labels(network_df, out_file)
+    #     save_flair_users_only(network_df, out_file)
+    #     save_gold_users_only(network_df, out_file)
+    #     save_silver_users_only(network_df, out_file)
