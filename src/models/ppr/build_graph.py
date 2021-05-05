@@ -7,21 +7,6 @@ import networkx as nx
 from tqdm.notebook import tqdm
 
 
-def grab_bot_accounts():
-    fname = '/shared/0/projects/prosocial/known-bots.tsv'
-    bots = []
-
-    with open(fname, 'rt') as f:
-        lines = f.readlines()
-
-        for line in lines:
-            bots.append(line.split('\t')[1])
-
-    print("Known bots: %d" % len(bots))
-    bots.append('[deleted]')
-    return bots
-
-
 def filter_subreddit_and_users(files, super_user_cutoff=10000):
     """
         Top 10% of subreddits

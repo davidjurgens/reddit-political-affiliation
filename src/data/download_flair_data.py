@@ -2,7 +2,7 @@ import csv
 import sys
 from collections import defaultdict
 
-from src.data.date_helper import read_submissions
+from src.data.data_helper import read_submissions
 
 """  Script to parse out user flair information from Reddit comments and posts 
      

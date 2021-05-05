@@ -4,7 +4,7 @@ from collections import defaultdict
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
-from src.data.date_helper import read_submissions
+from src.data.data_helper import read_submissions
 from src.features.interactions.political_comment import PoliticalComment
 
 """ 1st pass through to get comments of political users and associated metadata """

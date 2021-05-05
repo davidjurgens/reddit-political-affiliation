@@ -6,8 +6,7 @@ from collections import *
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.features.political_affiliations.comment_regexes import *
-from src.data.date_helper import read_submissions
-from src.models.ppr.build_graph import grab_bot_accounts
+from src.data.data_helper import read_submissions, grab_bot_accounts
 
 
 def parse_comment_affiliations(file_path, is_silver=False):

@@ -1,11 +1,12 @@
 import sys
-from os import path
-import pandas as pd
 from glob import glob
+from os import path
+
+import pandas as pd
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
-from src.data.date_helper import read_submissions
+from src.data.data_helper import read_submissions, grab_bot_accounts
 from src.features.political_affiliations.conglomerate_affiliations import get_all_political_users
 from src.features.bad_actors.bad_actors import read_in_bad_actor_usernames
 
@@ -58,15 +59,16 @@ def collect_non_political_usernames(raw_files, political_users, count):
     assert type(political_users) is dict or type(political_users) is set
     usernames_per_file = int(count / len(raw_files))
     usernames = set()
+    bots = grab_bot_accounts()
 
     for m_file in raw_files:
-        non_political_users = sample_non_political_users(m_file, political_users, usernames_per_file)
+        non_political_users = sample_non_political_users(m_file, political_users, usernames_per_file, bots)
         usernames.update(non_political_users)
 
     return usernames
 
 
-def sample_non_political_users(month_file, political_users, count):
+def sample_non_political_users(month_file, political_users, count, bots):
     assert type(political_users) is dict or type(political_users) is set
     users = set()
     print("Sampling {} non political users from: {}".format(count, month_file))
@@ -74,7 +76,7 @@ def sample_non_political_users(month_file, political_users, count):
     for submission in read_submissions(month_file):
         username = submission.username
 
-        if username not in political_users:
+        if username not in political_users and username not in bots:
             users.add(username)
             if len(users) % 100000 == 0 and len(users) > 0:
                 print("Completed sampling {} non political users from file: {}".format(len(users), month_file))

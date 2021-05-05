@@ -12,7 +12,7 @@ from sklearn.metrics import classification_report
 
 sys.path.append('/home/zbohan/projects/')
 
-from src.data.date_helper import read_submissions
+from src.data.data_helper import read_submissions
 from src.data.word2vec.make_dataset import read_flair_political_affiliations, dict_random_split
 from src.models.textclassifier.feature import build_train_test_dev
 

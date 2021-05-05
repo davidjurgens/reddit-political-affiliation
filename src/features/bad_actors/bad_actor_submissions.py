@@ -4,7 +4,7 @@ from collections import defaultdict
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
-from src.data.date_helper import read_submissions
+from src.data.data_helper import read_submissions
 from src.features.bad_actors.bad_actors import read_in_bad_actors_from_tsv
 
 

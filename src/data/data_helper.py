@@ -4,7 +4,6 @@ import json
 import lzma
 import sys
 from glob import glob
-from json import JSONDecodeError
 
 import zstandard as zstd
 
@@ -61,3 +60,19 @@ def get_all_raw_files():
     files.extend(glob('/shared/2/datasets/reddit-dump-all/RS/*.xz'))
     print("Total of {} files".format(len(files)))
     return files
+
+
+def grab_bot_accounts():
+    fname = '/shared/0/projects/prosocial/known-bots.tsv'
+    bots = []
+
+    with open(fname, 'rt') as f:
+        lines = f.readlines()
+
+        for line in lines:
+            bots.append(line.split('\t')[1])
+
+    print("Known bots: %d" % len(bots))
+    bots.append('[deleted]')
+    bots.append('deleted')
+    return bots

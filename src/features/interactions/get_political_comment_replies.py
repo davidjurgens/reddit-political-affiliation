@@ -3,7 +3,7 @@ import sys
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
-from src.data.date_helper import read_submissions
+from src.data.data_helper import read_submissions
 from src.features.interactions.political_comment import PoliticalComment
 
 """ 2nd pass through. Find child or parent comments of comments made by political users """

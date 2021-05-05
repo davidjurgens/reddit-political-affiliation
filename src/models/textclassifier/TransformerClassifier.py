@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('/home/zbohan/projects/')
-from src.data.date_helper import get_file_handle
+from src.data.data_helper import get_file_handle
 import json
 from sklearn.metrics import classification_report
 from sklearn.utils import resample
