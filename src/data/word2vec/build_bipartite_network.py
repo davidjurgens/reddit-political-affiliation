@@ -1,20 +1,20 @@
 import glob
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
-from src.data.date_helper import read_submissions
+from src.data.data_helper import read_submissions, grab_bot_accounts
 from src.features.collect_samples import sample_non_political_users
 from src.features.political_affiliations.conglomerate_affiliations import get_train_political_affiliations
 from src.features.political_affiliations.flair_political_affiliations import get_all_flair_users
 from src.features.political_affiliations.comment_political_affiliations import get_all_gold_users, get_all_silver_users
 
 NON_POLITICAL_USERS_MULTIPLE = 5
-OUT_DIR = "/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/"
+OUT_DIR = "/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/general/"
 
 
 def build_bipartite_network(month_file, n_subreddits, min_posts, out_file, sources=None):
@@ -148,13 +148,21 @@ def parse_name_from_filepath(filepath):
     return name.rsplit('.', 1)[0]
 
 
+def remove_bots(network_df, out_file):
+    """ Should not be necessary but just in case """
+    print("Removing bots for : {}".format(out_file))
+    bots = grab_bot_accounts()
+    filtered_df = network_df[~network_df['username'].isin(bots)]
+    print("Starting network size: {}. Filtered network size: {}".format(len(network_df), len(filtered_df)))
+    filtered_df.to_csv(OUT_DIR + out_file, sep='\t', index=False)
+
+
 if __name__ == '__main__':
     train_tsv = "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/train.tsv"
     files = glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.zst')
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.xz'))
     files.extend(glob.glob('/shared/2/datasets/reddit-dump-all/RC/*.bz2'))
 
-    # Run
     min_posts = 5
     n_subreddits = 25000
 
