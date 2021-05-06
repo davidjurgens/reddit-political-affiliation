@@ -3,7 +3,7 @@ import sys
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
-from src.data.date_helper import read_submissions
+from src.data.data_helper import read_submissions
 from src.features.interactions.political_comment import PoliticalComment
 
 """ 2nd pass through. Find child or parent comments of comments made by political users """
@@ -54,8 +54,9 @@ def get_all_comments(raw_files):
     for file in raw_files:
         for submission in read_submissions(file):
             comment_id, parent_id, subreddit, created_utc, author, text = submission['id'], submission['parent_id'], \
-                                                                    submission['subreddit'], submission['created_utc'], \
-                                                                    submission['author'], submission['body']
+                                                                          submission['subreddit'], submission[
+                                                                              'created_utc'], \
+                                                                          submission['author'], submission['body']
             try:
                 text = submission['body']
                 text = " ".join(text.split())
@@ -72,6 +73,7 @@ def get_all_comments(raw_files):
             except Exception:
                 pass
 
+
 def remove_id_prefix_and_bots(in_file, bots):
     """ Go back through and do some post collection cleaning """
     comments = 0
@@ -85,7 +87,8 @@ def remove_id_prefix_and_bots(in_file, bots):
                     parent_id = parent_id[3:]
 
                 comments += 1
-                political_comment = PoliticalComment(comment_id, parent_id, username, subreddit, created, politics, text)
+                political_comment = PoliticalComment(comment_id, parent_id, username, subreddit, created, politics,
+                                                     text)
                 yield political_comment
 
     print("Total number of political comments: {}".format(comments))

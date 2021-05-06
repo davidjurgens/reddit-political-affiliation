@@ -6,7 +6,7 @@ from tensorboardX import SummaryWriter
 
 parser = argparse.ArgumentParser(description='Train User2Subreddit word2vec model')
 parser.add_argument('--network', type=str, help="Location of the bipartite network file between users and subreddits")
-parser.add_argument('--num_epochs', type=int, help="The number of epochs to run", default=10)
+parser.add_argument('--num_epochs', type=int, help="The number of epochs to run", default=15)
 parser.add_argument('--batch_size', type=int, help="The batch size", default=512)
 parser.add_argument('--out', type=str, help="Output directory")
 parser.add_argument('--device', type=str, help="The GPU to run on (e.g., cuda:0)")
@@ -33,7 +33,8 @@ data_directory = args.data_directory + year_month
 if args.network:
     network_path = args.network
 else:
-    network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year_month + '.tsv'
+    # network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year_month + '.tsv'
+    network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/silver/2019-10_1000subs_10posts.tsv'
 
 if args.out:
     out_dir = args.out
@@ -54,7 +55,7 @@ if args.device:
     torch.cuda.set_device(int(args.device[-1]))
     device = torch.device(args.device)
 else:
-    device = torch.device("cuda:0")
+    device = torch.device("cuda:1")
     torch.cuda.set_device(0)
 
 load_from = args.load_from

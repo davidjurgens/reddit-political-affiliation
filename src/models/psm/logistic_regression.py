@@ -1,6 +1,7 @@
 import glob
-import pandas as pd
 import random
+
+import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 from sklearn.linear_model import LogisticRegression

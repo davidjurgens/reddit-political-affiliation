@@ -8,10 +8,7 @@ sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 from src.features.political_affiliations.comment_political_affiliations import read_in_user_politics, \
     parse_name_from_filepath, user_politics_to_tsv
 
-"""
-
-    Script to filter down existing comment matches (from comment_political_affiliations.py) with new criteria
-"""
+""" Script to filter down existing comment matches (from comment_political_affiliations.py) with new criteria """
 
 
 def filter_matches(comment_politics_files, exclude_matches, out_dir):
@@ -37,7 +34,8 @@ def filter_matches(comment_politics_files, exclude_matches, out_dir):
 
 if __name__ == '__main__':
     gold_comment_files = glob('/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/gold/*.tsv')
-    silver_comment_files = glob('/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/silver/*.tsv')
+    silver_comment_files = glob(
+        '/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/silver/*.tsv')
 
     # Remove was/former declarations
     matches_to_exclude = "i (was|used to be|used to vote)( a| as a)? (conservative|republican)|i (" \

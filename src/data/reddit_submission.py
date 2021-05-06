@@ -6,7 +6,6 @@ class Submission:
         self.flair = submission_json['author_flair_text']
         self.subreddit = submission_json['subreddit']
         self.created = submission_json['created_utc']
-        self.score = submission_json['score']
 
         if 'score' in submission_json:
             self.score = int(submission_json['score'])

@@ -4,7 +4,7 @@ from collections import defaultdict
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
-from src.data.date_helper import read_submissions
+from src.data.data_helper import read_submissions
 from src.features.interactions.political_comment import PoliticalComment
 
 """ 1st pass through to get comments of political users and associated metadata """
@@ -20,7 +20,8 @@ def get_political_user_comment_ids(files, political_users):
                 text = submission['body']
                 text = " ".join(text.split())
                 politics = political_users[author]
-                political_comment = PoliticalComment(comment_id, parent_id, author, subreddit, created_utc, politics, text)
+                political_comment = PoliticalComment(comment_id, parent_id, author, subreddit, created_utc, politics,
+                                                     text)
                 yield political_comment
 
 

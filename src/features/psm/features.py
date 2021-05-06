@@ -1,5 +1,6 @@
-import pytz
 from datetime import datetime
+
+import pytz
 
 political_subreddits = [
     'Conservative',

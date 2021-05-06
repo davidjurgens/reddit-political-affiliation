@@ -1,7 +1,8 @@
-import sys
 import re
-import liwc
+import sys
 from collections import Counter
+
+import liwc
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
