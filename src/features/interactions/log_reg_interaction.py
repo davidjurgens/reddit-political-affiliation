@@ -216,6 +216,3 @@ if __name__ == '__main__':
     # pd.set_option('display.max_rows', None)
     # #print(df_result.sort_values(by=['   coef   ']).head(50))
     # print(df_result.sort_values(by=['   coef   '],ascending=False).head(50))
-
-
-
