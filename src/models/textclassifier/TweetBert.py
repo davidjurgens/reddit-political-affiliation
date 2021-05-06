@@ -135,12 +135,12 @@ def evaluate_by_user(model,data,name=""):
     result_pd=pd.DataFrame({'username':user_name_list,'party_score':y_pred,'predict_politics':pred_label,'politics':y_true})
     saved_path="/shared/0/projects/reddit-political-affiliation/data/bert-text-classify/users_prediction/"
     if len(name)>1:
-        result_pd.to_csv(saved_path+model_name+"_"+name+".tsv",sep="\t")
+        result_pd.to_csv(saved_path+model_name+"_"+name+"_"+str(load_from)+".tsv",sep="\t")
     result_pd=result_pd.sort_values(by=["username","party_score"])
     #print(result_pd)
     result_pd=result_pd.drop_duplicates(subset="username",keep="last").reset_index()
     if len(name)>1:
-        result_pd.to_csv(saved_path+model_name+"_most_confident_"+name+".tsv",sep="\t")
+        result_pd.to_csv(saved_path+model_name+"_most_confident_"+name+"_"+str(load_from)+".tsv",sep="\t")
     #print (result_pd)
 
     user_y_pred=list(result_pd['predict_politics'])
@@ -188,12 +188,12 @@ comments_dir = '/shared/0/projects/reddit-political-affiliation/data/bert-text-c
 
 
 if __name__ == '__main__':
-    dv="cuda:4"
-    load_from=4
+    dv="cuda:6"
+    load_from=9
     test_mode=1
 
     in_file = '/shared/0/projects/reddit-political-affiliation/data/interactions/all_comments_filtered.tsv'
-    comments = read_in_comments(in_file,count=10000)
+    comments = read_in_comments(in_file,count=-1)
     df_comments = pd.DataFrame(comments)
 
     cong_dir = '/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/'
@@ -252,7 +252,7 @@ if __name__ == '__main__':
         #merged_dev = merged_train[merged_dev['subreddit'] == 'politics']
         model_name += "_politics"
 
-    training_name='silver'
+    training_name='gold'
     model_name+="_"+training_name
     training_data=merged_train[merged_train['source']==training_name].reset_index()
 
