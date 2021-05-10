@@ -7,7 +7,7 @@ import pandas as pd
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.data.word2vec.build_bipartite_network import filter_down_by_source
-from src.data.word2vec.subreddit_political_labels import subreddit_politics
+from src.features.political_affiliations.subreddit_political_labels import subreddit_politics
 
 """
     Script to build variations of the bipartite network. Example use cases

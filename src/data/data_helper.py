@@ -75,4 +75,5 @@ def grab_bot_accounts():
     print("Known bots: %d" % len(bots))
     bots.append('[deleted]')
     bots.append('deleted')
+    bots.append('AutoModerator')
     return bots
