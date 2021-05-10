@@ -5,6 +5,7 @@ import json
 from collections import defaultdict
 
 import pandas as pd
+from pandas.errors import EmptyDataError
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
@@ -57,12 +58,21 @@ def output_to_tsv(month_file, user_politics):
     df.to_csv(OUTPUT_DIRECTORY + out_file, sep='\t', index=False)
 
 
-def get_user_politics_for_community_labels(in_tsv):
-    print("Reading in political affiliations for community labels from: " + in_tsv)
+def get_user_politics_for_community_labels():
+    input_files = glob(OUTPUT_DIRECTORY + "*.tsv")
+    frames = []
+    for m_file in input_files:
+        print("Reading in political affiliations for community labels from: " + m_file)
+        try:
+            month_df = pd.read_csv(m_file, sep='\t', index_col=False)
+            frames.append(month_df)
+        except EmptyDataError:
+            pass
+
+    df = pd.concat(frames, ignore_index=True)
     user_politics = {}
-    df = pd.read_csv(in_tsv, sep='\t', index_col=False)
-    for row in df.iterrows():
-        user_politics[row['username']] = row['politics']
+    for row in df.itertuples():
+        user_politics[row.username] = row.politics
 
     return user_politics
 
