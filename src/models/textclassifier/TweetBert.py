@@ -19,8 +19,8 @@ from nltk.tokenize import word_tokenize
 import numpy as np
 
 def downsampling(data):
-    data_majority = data[data.politics_y == ("Republican" if training_name=="flair" else "Democrat")]
-    data_minority = data[data.politics_y == ("Democrat" if training_name=="flair" else "Republican")]
+    data_majority = data[data.politics_y == ("Republican" if training_name=="flair" or "community" else "Democrat")]
+    data_minority = data[data.politics_y == ("Democrat" if training_name=="flair" or "community" else "Republican")]
     majority_down_sampled = resample(data_majority, n_samples=len(data_minority), random_state=42)
     return pd.concat([majority_down_sampled, data_minority],ignore_index=True).sample(frac=1)
 
@@ -109,9 +109,13 @@ def evaluate_by_user(model,data,name=""):
     y_true = []
     pred_label = []
     user_name_list = []
+    #text_list=[]
     model.eval()
     #with torch.no_grad():
     for sent, mask, label, user_name in tqdm(data):
+        #print(sent.shape)
+        #origin_sent=tokenizer.batch_decode(sent)
+        #print(len(origin_sent))
         sent = sent.cuda()
         label = label.cuda()
         mask = mask.cuda()
@@ -126,6 +130,7 @@ def evaluate_by_user(model,data,name=""):
 
         y_true.extend(list(label.detach().cpu().numpy()))
         user_name_list.extend(user_name)
+        #text_list.extend(origin_sent)
 
         del sent
         del mask
@@ -188,8 +193,8 @@ comments_dir = '/shared/0/projects/reddit-political-affiliation/data/bert-text-c
 
 
 if __name__ == '__main__':
-    dv="cuda:6"
-    load_from=9
+    dv="cuda:4"
+    load_from=4
     test_mode=1
 
     in_file = '/shared/0/projects/reddit-political-affiliation/data/interactions/all_comments_filtered.tsv'
@@ -211,6 +216,22 @@ if __name__ == '__main__':
 
     print(train_comments.shape,dev_comments.shape,test_comments.shape)
 
+    community_train_cong=train_cong[train_cong['source']=='community']
+    community_dev_cong=dev_cong[dev_cong['source']=='community']
+    community_test_cong=test_cong[test_cong['source']=='community']
+
+    community_merged_train = pd.merge(train_comments, community_train_cong, on='username')[
+        ['username', 'text', 'politics_y', 'source', 'subreddit_x']]
+    community_merged_test = pd.merge(test_comments, community_test_cong, on='username')[
+        ['username', 'text', 'politics_y', 'source', 'subreddit_x']]
+    community_merged_dev = pd.merge(dev_comments, community_dev_cong, on='username')[
+        ['username', 'text', 'politics_y', 'source', 'subreddit_x']]
+
+
+    train_cong=train_cong[train_cong['source']!='community']
+    dev_cong=dev_cong[dev_cong['source']!='community']
+    test_cong=test_cong[test_cong['source']!='community']
+
     sorted_train_cong=train_cong.sort_values(["username","source"])
     distinct_train_cong=sorted_train_cong.drop_duplicates(subset="username",keep="first").sample(frac=1)
     sorted_test_cong = test_cong.sort_values(["username", "source"])
@@ -218,16 +239,14 @@ if __name__ == '__main__':
     sorted_dev_cong = dev_cong.sort_values(["username", "source"])
     distinct_dev_cong = sorted_dev_cong.drop_duplicates(subset="username", keep="first").sample(frac=1)
 
-
     merged_train=pd.merge(train_comments,distinct_train_cong,on='username')[['username','text','politics_y','source','subreddit_x']]
-    #print(merged_train.sample(frac=1).head())
-    #merged_train=merged_train
-    #print(train_comments.head())
-    #print(distinct_train_cong.head())
-
     merged_test = pd.merge(test_comments, distinct_test_cong, on='username')[['username','text','politics_y','source','subreddit_x']]
     merged_dev = pd.merge(dev_comments, distinct_dev_cong, on='username')[['username','text','politics_y','source','subreddit_x']]
 
+
+    merged_train=pd.concat([merged_train,community_merged_train])
+    merged_test=pd.concat([merged_test,community_merged_test])
+    merged_dev=pd.concat([merged_dev,community_merged_dev])
 
     #print(merged_train.head())
 
@@ -238,24 +257,22 @@ if __name__ == '__main__':
     # BertTweet = AutoModel.from_pretrained("vinai/bertweet-base")
     # tokenizer = AutoTokenizer.from_pretrained("vinai/bertweet-base",normalization=True)
     # model=BertTune(BertTweet)
+    # only_politics = False
+    # if only_politics:
+    #     merged_train = merged_train[merged_train['subreddit_x'] == 'politics']
+    #     #print (merged_train)
+    #     #merged_test = merged_train[merged_test['subreddit'] == 'politics']
+    #     #merged_dev = merged_train[merged_dev['subreddit'] == 'politics']
+    #     model_name += "_politics"
 
-    model_name="Roberta"
+    model_name = "Roberta"
     config = RobertaConfig.from_pretrained('roberta-base')
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
     model = RobertaForSequenceClassification(config)
 
-    only_politics = False
-    if only_politics:
-        merged_train = merged_train[merged_train['subreddit_x'] == 'politics']
-        #print (merged_train)
-        #merged_test = merged_train[merged_test['subreddit'] == 'politics']
-        #merged_dev = merged_train[merged_dev['subreddit'] == 'politics']
-        model_name += "_politics"
-
-    training_name='gold'
+    training_name='flair'
     model_name+="_"+training_name
     training_data=merged_train[merged_train['source']==training_name].reset_index()
-
     # print(training_data)
 
     is_downsampling = True
@@ -336,21 +353,26 @@ if __name__ == '__main__':
         #print("Evaluation on test set:")
         #mc = evaluate(model, test_loader)
     else:
-        model.load_state_dict(torch.load(comments_dir+ model_name +"_Text_Classifier_9.pt" , map_location=device))
+        model.load_state_dict(torch.load(comments_dir+ model_name +"_Text_Classifier_"+str(load_from)+".pt" , map_location=device))
         model.cuda()
         print("Evaluation on test set:")
 
         gold_test=merged_test[merged_test['source']=='gold'].reset_index()
         silver_test = merged_test[merged_test['source'] == 'silver'].reset_index()
         flair_test = merged_test[merged_test['source'] == 'flair'].reset_index()
+        community_test=merged_test[merged_test['source']=='community'].reset_index()
+
         print(gold_test)
 
         gold_set = Intents(gold_test)
         silver_set = Intents(silver_test)
         flair_set = Intents(flair_test)
+        community_set=Intents(community_test)
+
         gold_loader = DataLoader(gold_set, **params)
         silver_loader = DataLoader(silver_set, **params)
         flair_loader = DataLoader(flair_set, **params)
+        community_loader=DataLoader(community_set,**params)
 
         print("Evaluating on gold...")
         mc = evaluate_by_user(model, gold_loader,"gold")
@@ -358,5 +380,7 @@ if __name__ == '__main__':
         mc = evaluate_by_user(model, silver_loader,"silver")
         print("Evaluating on flair...")
         mc = evaluate_by_user(model, flair_loader,"flair")
+        print("Evaluating on community...")
+        mc = evaluate_by_user(model, community_loader, "community")
         # print("Evaluating on all test...")
         # mc = evaluate(model, test_loader)
