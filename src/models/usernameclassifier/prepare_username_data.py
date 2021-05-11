@@ -1,5 +1,7 @@
 import sys
 
+import pandas as pd
+
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.features.political_affiliations.conglomerate_affiliations import *
@@ -77,16 +79,19 @@ flair_train['binary_label'] = get_binary_political_labels(flair_train['politics'
 gold_train['binary_label'] = get_binary_political_labels(gold_train['politics'])
 silver_train['binary_label'] = get_binary_political_labels(silver_train['politics'])
 community_train['binary_label'] = get_binary_political_labels(community_train['politics'])
+all_train = pd.concat([flair_train, gold_train, silver_train, community_train], ignore_index=True)
 
 flair_dev['binary_label'] = get_binary_political_labels(flair_dev['politics'])
 gold_dev['binary_label'] = get_binary_political_labels(gold_dev['politics'])
 silver_dev['binary_label'] = get_binary_political_labels(silver_dev['politics'])
 community_dev['binary_label'] = get_binary_political_labels(community_dev['politics'])
+all_dev = pd.concat([flair_dev, gold_dev, silver_dev, community_dev], ignore_index=False)
 
 flair_test['binary_label'] = get_binary_political_labels(flair_test['politics'])
 gold_test['binary_label'] = get_binary_political_labels(gold_test['politics'])
 silver_test['binary_label'] = get_binary_political_labels(silver_test['politics'])
 community_test['binary_label'] = get_binary_political_labels(community_test['politics'])
+all_test = pd.concat([flair_test, gold_test, silver_test, community_test], ignore_index=False)
 
 print(flair_train.head())
 
@@ -96,13 +101,16 @@ flair_train.to_csv(out_dir + 'user2label.flair.train.csv', index=False)
 gold_train.to_csv(out_dir + 'user2label.gold.train.csv', index=False)
 silver_train.to_csv(out_dir + 'user2label.silver.train.csv', index=False)
 silver_train.to_csv(out_dir + 'user2label.community.train.csv', index=False)
+all_train.to_csv(out_dir + 'user2label.all.train.csv', index=False)
 
 flair_dev.to_csv(out_dir + 'user2label.flair.dev.csv', index=False)
 gold_dev.to_csv(out_dir + 'user2label.gold.dev.csv', index=False)
 silver_dev.to_csv(out_dir + 'user2label.silver.dev.csv', index=False)
 silver_dev.to_csv(out_dir + 'user2label.community.dev.csv', index=False)
+all_dev.to_csv(out_dir + 'user2label.all.dev.csv', index=False)
 
 flair_test.to_csv(out_dir + 'user2label.flair.test.csv', index=False)
 gold_test.to_csv(out_dir + 'user2label.gold.test.csv', index=False)
 silver_test.to_csv(out_dir + 'user2label.silver.test.csv', index=False)
 silver_test.to_csv(out_dir + 'user2label.community.test.csv', index=False)
+all_test.to_csv(out_dir + 'user2label.all.test.csv', index=False)
