@@ -1,12 +1,14 @@
 import sys
 from collections import defaultdict
 
+import numpy as np
 import pandas as pd
 import torch
 import torch.optim as optim
 from torch import nn
 from torchtext.legacy.data import Field, LabelField, TabularDataset, BucketIterator
 from tqdm import tqdm
+from sklearn.metrics import auc, roc_curve
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
@@ -14,16 +16,21 @@ from src.models.usernameclassifier.UsernameClassifier import UsernameClassifier
 
 # SETTINGS
 BASE_DIR = '/shared/0/projects/reddit-political-affiliation/data/username-labels/'
+OUTPUT_DIRECTORY = "/shared/0/projects/reddit-political-affiliation/data/username-classifier/"
+TRAIN_SOURCE = "community"
+TEST_SOURCE = "all"
 
 print("Building datasets for train, dev, and test")
 TEXT = Field(tokenize=list, batch_first=True, include_lengths=True)
 LABEL = LabelField(dtype=torch.float, batch_first=True)
 fields = [('text', TEXT), ('label', LABEL), (None, None), ]
 
-training_data = TabularDataset(BASE_DIR + 'user2label.silver.train.csv', format='csv', fields=fields,
+training_data = TabularDataset(BASE_DIR + 'user2label.{}.train.csv'.format(TRAIN_SOURCE), format='csv', fields=fields,
                                skip_header=True)
-dev_data = TabularDataset(BASE_DIR + 'user2label.silver.dev.csv', format='csv', fields=fields, skip_header=True)
-test_data = TabularDataset(BASE_DIR + 'user2label.silver.test.csv', format='csv', fields=fields, skip_header=True)
+dev_data = TabularDataset(BASE_DIR + 'user2label.{}.dev.csv'.format(TEST_SOURCE), format='csv', fields=fields,
+                          skip_header=True)
+test_data = TabularDataset(BASE_DIR + 'user2label.{}.test.csv'.format(TEST_SOURCE), format='csv', fields=fields,
+                           skip_header=True)
 
 print("Sample of preprocessed text: {}".format(vars(training_data.examples[0])))
 
@@ -47,7 +54,6 @@ print(TEXT.vocab.stoi)
 # check whether cuda is available
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
-# set batch size
 BATCH_SIZE = 128
 
 # Load an iterator
@@ -114,7 +120,7 @@ def train(model, iterator, optimizer, criterion):
         # compute the binary accuracy
         acc = binary_accuracy(predictions, batch.label)
 
-        # backpropage the loss and compute the gradients
+        # back-propagate the loss and compute the gradients
         loss.backward()
 
         # update the weights
@@ -131,6 +137,7 @@ def evaluate(model, iterator, criterion):
     # initialize every epoch
     epoch_loss = 0
     epoch_acc = 0
+    epoch_auc = []
 
     # deactivating dropout layers
     model.eval()
@@ -148,14 +155,19 @@ def evaluate(model, iterator, criterion):
             loss = criterion(predictions, batch.label)
             acc = binary_accuracy(predictions, batch.label)
 
+            fpr, tpr, thresholds = roc_curve(batch.label.cpu().detach().numpy(),
+                                             predictions.cpu().detach().numpy(), pos_label=1)
+            model_auc = auc(fpr, tpr)
+
             # keep track of loss and accuracy
             epoch_loss += loss.item()
             epoch_acc += acc.item()
+            epoch_auc.append(model_auc)
 
-    return epoch_loss / len(iterator), epoch_acc / len(iterator)
+    return epoch_loss / len(iterator), epoch_acc / len(iterator), np.mean(model_auc)
 
 
-N_EPOCHS = 10
+N_EPOCHS = 40
 best_valid_loss = float('inf')
 
 for epoch in range(N_EPOCHS):
@@ -164,15 +176,15 @@ for epoch in range(N_EPOCHS):
     train_loss, train_acc = train(model, train_iterator, optimizer, criterion)
 
     # evaluate the model
-    valid_loss, valid_acc = evaluate(model, valid_iterator, criterion)
+    valid_loss, valid_acc, valid_auc = evaluate(model, valid_iterator, criterion)
 
     # save the best model
     if valid_loss < best_valid_loss:
         best_valid_loss = valid_loss
-        torch.save(model.state_dict(), 'saved_weights.pt')
+        torch.save(model.state_dict(), OUTPUT_DIRECTORY + TRAIN_SOURCE + '/saved_weights.pt')
 
     print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
-    print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}%')
+    print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}% |  Val. AUC: {valid_auc:.2f}%')
 
 # Check out some of the predictions
 model.eval()
