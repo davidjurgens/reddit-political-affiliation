@@ -3,7 +3,7 @@ import sys
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.features.bad_actors.bad_actors import get_genuine_actors
-from src.features.collect_user_features import read_in_bad_actor_features
+from src.features.behavioral_features.collect_user_features import read_in_bad_actor_features
 
 OUT_DIRECTORY = "/shared/0/projects/reddit-political-affiliation/data/user-features/"
 

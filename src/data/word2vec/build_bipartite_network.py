@@ -8,7 +8,7 @@ import pandas as pd
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.data.data_helper import read_submissions, grab_bot_accounts
-from src.features.collect_samples import sample_non_political_users
+from src.features.behavioral_features.collect_samples import sample_non_political_users
 from src.features.political_affiliations.conglomerate_affiliations import get_train_political_affiliations
 from src.features.political_affiliations.flair_political_affiliations import get_all_flair_users
 from src.features.political_affiliations.comment_political_affiliations import get_all_gold_users, get_all_silver_users

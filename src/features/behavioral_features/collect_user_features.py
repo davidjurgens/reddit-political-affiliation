@@ -10,7 +10,7 @@ sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 from src.data.data_helper import read_submissions, get_all_raw_files
 from src.features.political_affiliations.conglomerate_affiliations import get_all_political_users
 from src.features.bad_actors.bad_actors import read_in_bad_actors_from_tsv
-from src.features.collect_samples import read_usernames_from_tsv
+from src.features.behavioral_features.collect_samples import read_usernames_from_tsv
 
 
 def collect_user_submission_data(month_file, users, user_features):
