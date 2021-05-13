@@ -154,11 +154,38 @@ def get_dev_political_affiliations():
         "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/dev.tsv")
 
 
+def get_df(name):
+    assert name == 'train' or name == 'dev' or name == 'test'
+    return pd.read_csv(OUTPUT_DIRECTORY + '/{}.tsv'.format(name), sep='\t', index_col=False)
+
+
+def get_train_users(source):
+    assert source == 'flair' or source == 'community' or source == 'gold' or source == 'silver'
+    train_df = get_df('train')
+    source_df = train_df[train_df['source'] == source]
+    return set(source_df['username'].tolist())
+
+
+def get_train_users_by_politics(source, politics):
+    assert source == 'flair' or source == 'community' or source == 'gold' or source == 'silver'
+    assert politics == "Democrat" or politics == "Republican"
+    train_df = get_df('train')
+    source_df = train_df[train_df['source'] == source]
+    source_politics_df = source_df[source_df['politics'] == politics]
+    return set(source_politics_df['username'].tolist())
+
+
 def get_all_political_users():
-    # print("Grabbing all political users")
-    # df = build_df(grab_all_data_sources())
-    # return set(df['username'].tolist())
-    pass
+    print("Grabbing all political users")
+    train_df = get_df('train')
+    dev_df = get_df('dev')
+    test_df = get_df('test')
+
+    train_users = set(train_df['username'].tolist())
+    dev_users = set(dev_df['username'].tolist())
+    test_users = set(test_df['username'].tolist())
+
+    return train_users.union(dev_users).union(test_users)
 
 
 def add_in_community_labels():
