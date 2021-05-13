@@ -10,7 +10,7 @@ from scipy.stats import entropy
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
-from src.features.political_affiliations.conglomerate_affiliations import get_train_df
+from src.features.behavioral_features.descriptive_metrics_by_cohort import get_random_sample_of_each_data_source
 
 DATA_DIRECTORY = "/shared/2/datasets/reddit-dump-all/user-subreddit-counts/"
 OUTPUT_DIRECTORY = "/shared/0/projects/reddit-political-affiliation/data/behavior/"
@@ -93,31 +93,7 @@ def run(users, source_name):
 
 
 if __name__ == '__main__':
-    df = get_train_df()
+    users_by_source = get_random_sample_of_each_data_source(n=10000)
 
-    flair_df = df[df['source'] == 'flair']
-    gold_df = df[df['source'] == 'gold']
-    silver_df = df[df['source'] == 'silver']
-    community_df = df[df['source'] == 'community']
-
-    flair_users = set(flair_df['username'].tolist())
-    flair_users = randomly_sample_users(flair_users, n=10000)
-
-    gold_users = set(gold_df['username'].tolist())
-    gold_users = randomly_sample_users(gold_users, n=10000)
-
-    silver_users = set(silver_df['username'].tolist())
-    silver_users = randomly_sample_users(silver_users, n=10000)
-
-    community_users = set(community_df['username'].tolist())
-    community_users = randomly_sample_users(community_users, n=10000)
-
-    print("Total number of flair users: {}".format(len(flair_users)))
-    print("Total number of gold users: {}".format(len(gold_users)))
-    print("Total number of silver users: {}".format(len(silver_users)))
-    print("Total number of community users: {}".format(len(community_users)))
-
-    run(flair_users, "flair")
-    run(gold_users, "gold")
-    run(gold_users, "silver")
-    run(community_users, "community")
+    for source, users in users_by_source.items():
+        run(users, source)
