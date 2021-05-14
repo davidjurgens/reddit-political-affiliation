@@ -55,7 +55,6 @@ def get_random_sample_of_each_data_source_and_politics(n=3000):
     gold_rep_users = set(random.sample(gold_rep_users, n))
     gold_dem_users = set(random.sample(gold_dem_users, n))
 
-
     community_rep_users = get_train_users_by_politics('community', 'Republican')
     community_dem_users = get_train_users_by_politics('community', 'Democrat')
     community_rep_users = set(random.sample(community_rep_users, n))

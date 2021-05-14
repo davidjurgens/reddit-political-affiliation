@@ -13,6 +13,7 @@ from src.features.political_affiliations.conglomerate_affiliations import get_al
 from src.features.political_affiliations.flair_political_affiliations import get_all_flair_users
 from src.features.political_affiliations.comment_political_affiliations import get_all_gold_users
 from src.features.political_affiliations.community_labels import get_all_community_users
+from src.features.behavioral_features.subreddit_constants import top_subreddits, political_subreddits
 from src.features.bad_actors.bad_actors import read_in_bad_actors_from_tsv
 
 OUT_DIRECTORY = "/shared/0/projects/reddit-political-affiliation/data/user-features/"
@@ -27,13 +28,24 @@ def collect_user_submission_data(month_file, political_users, bad_actors, non_po
     for submission in read_submissions(month_file):
         # Check from smallest to largest
         if submission.username in bad_actors:
-            bad_actor_features[submission.username].append(submission.get_metadata_dict())
+            bad_actor_features[submission.username].append(get_submission_metadata(submission))
         elif submission.username in non_political_users:
-            non_pol_user_features[submission.username].append(submission.get_metadata_dict())
+            non_pol_user_features[submission.username].append(get_submission_metadata(submission))
         elif submission.username in political_users:
-            pol_user_features[submission.username].append(submission.get_metadata_dict())
+            pol_user_features[submission.username].append(get_submission_metadata(submission))
 
     return pol_user_features, bad_actor_features, non_pol_user_features
+
+
+def get_submission_metadata(submission):
+    submission_type = 'post' if submission.is_post() else 'comment'
+    top_subreddit = 1 if submission.subreddit in top_subreddits else 0
+    pol_subreddit = 1 if submission.subreddit in political_subreddits else 0
+
+    return {'username': submission.username, 'subreddit': submission.subreddit, 'score': submission.score,
+            'submission_type': submission_type, 'gilded': submission.gilded, 'created': submission.created,
+            'total_awards': submission.total_awards, 'controversiality': submission.controversiality,
+            'top_subreddit': top_subreddit, 'political_subreddit': pol_subreddit}
 
 
 def build_user_features_df(user_features, source):
@@ -45,6 +57,7 @@ def build_user_features_df(user_features, source):
     for user, features in user_features.items():
         post_count, comment_count, total_awards, total_gilded, \
         total_controversiality, total_score = 0, 0, 0, 0, 0, 0
+        top_subreddit_participation, pol_subreddit_participation = 0, 0
         time_of_day_counts = OrderedDict({'morning': 0, 'afternoon': 0, 'evening': 0, 'night': 0})
 
         for entry in features:
@@ -53,6 +66,8 @@ def build_user_features_df(user_features, source):
             total_score += int(entry['score'])
             total_gilded += int(entry['gilded'])
             time_of_day_counts[get_time_of_day(entry['created'])] += 1
+            top_subreddit_participation += entry['top_subreddit']
+            pol_subreddit_participation += entry['political_subreddit']
 
             if entry['submission_type'] == 'post':
                 post_count += 1
@@ -64,8 +79,9 @@ def build_user_features_df(user_features, source):
                'morning_post_count': time_of_day_counts['morning'],
                'afternoon_post_count': time_of_day_counts['afternoon'],
                'evening_post_count': time_of_day_counts['evening'], 'night_post_count': time_of_day_counts['night'],
-               'post_count': post_count,
-               'comment_count': comment_count}
+               'post_count': post_count, 'comment_count': comment_count,
+               'top_subreddit_participation': top_subreddit_participation,
+               'political_subreddit_participation': pol_subreddit_participation}
         rows.append(row)
 
     return pd.DataFrame(rows)
