@@ -1,8 +1,8 @@
-import sys
 import gzip
-from glob import glob
 import json
+import sys
 from collections import defaultdict
+from glob import glob
 
 import pandas as pd
 from pandas.errors import EmptyDataError
@@ -75,6 +75,10 @@ def get_user_politics_for_community_labels():
         user_politics[row.username] = row.politics
 
     return user_politics
+
+
+def get_all_community_users():
+    return set(get_user_politics_for_community_labels().values())
 
 
 if __name__ == '__main__':

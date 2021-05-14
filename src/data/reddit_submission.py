@@ -36,8 +36,15 @@ class Submission:
         if self.is_post():
             self.num_comments = int(submission_json['num_comments'])
 
+        self.submission_type = "post" if self.is_post() else "comment"
+
     def is_post(self):
         return "num_comments" in self.submission_json
 
     def is_comment(self):
         return not self.is_post()
+
+    def get_metadata_dict(self):
+        return {'username': self.username, 'subreddit': self.subreddit, 'score': self.score,
+                'submission_type': self.submission_type, 'gilded': self.gilded, 'created': self.created,
+                'total_awards': self.total_awards, 'controversiality': self.controversiality}
