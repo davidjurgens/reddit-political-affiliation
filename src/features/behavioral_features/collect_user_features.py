@@ -19,9 +19,12 @@ from src.features.bad_actors.bad_actors import read_in_bad_actors_from_tsv
 OUT_DIRECTORY = "/shared/0/projects/reddit-political-affiliation/data/user-features/"
 
 
-def collect_user_submission_data(month_file, political_users, bad_actors, non_political_users, pol_user_features,
-                                 bad_actor_features, non_pol_user_features):
+def collect_user_submission_data(month_file, political_users, bad_actors, non_political_users):
     print("Collecting user features for month: {}".format(month_file))
+
+    pol_user_features, bad_actor_features, non_pol_user_features = defaultdict(list), defaultdict(list), defaultdict(
+        list)
+
     # Otherwise lookups take forever....
     assert type(political_users) == set and type(bad_actors) == set and type(non_political_users) == set
 
@@ -106,26 +109,29 @@ def run_collect(political_users, bad_actors, non_political_users, files):
     print("Total number of bad actor users: {}".format(len(bad_actors)))
     print("Total number of non political users: {}".format(len(non_political_users)))
 
-    pol_user_features, bad_actor_features, non_pol_user_features = defaultdict(list), defaultdict(list), defaultdict(
-        list)
-
     for m_file in files:
+        fname_base = parse_year_month_from_filename(m_file)
+        print(fname_base)
         pol_user_features, bad_actor_features, non_pol_user_features = \
-            collect_user_submission_data(m_file, political_users, bad_actors, non_political_users, pol_user_features,
-                                         bad_actor_features, non_pol_user_features)
+            collect_user_submission_data(m_file, political_users, bad_actors, non_political_users)
 
         pol_df = build_user_features_df(pol_user_features, 'political')
         bad_actors_df = build_user_features_df(bad_actor_features, 'bad actor')
         non_pol_df = build_user_features_df(non_pol_user_features, 'non-political')
 
-        print("Saving political user features dataframe to TSV")
-        pol_df.to_csv(OUT_DIRECTORY + 'all_political.tsv', sep='\t', index=False)
+        print("Saving political user features dataframe to TSV: {}".format('{}_political.tsv'.format(fname_base)))
+        pol_df.to_csv(OUT_DIRECTORY + '{}_political.tsv'.format(fname_base), sep='\t', index=False)
 
-        print("Saving bad actor user features dataframe to TSV")
-        bad_actors_df.to_csv(OUT_DIRECTORY + 'bad_actors.tsv', sep='\t', index=False)
+        print("Saving bad actor user features dataframe to TSV: {}".format('{}_bad_actors.tsv'.format(fname_base)))
+        bad_actors_df.to_csv(OUT_DIRECTORY + '{}_bad_actors.tsv'.format(fname_base), sep='\t', index=False)
 
-        print("Saving non political user features dataframe to TSV")
-        non_pol_df.to_csv(OUT_DIRECTORY + 'non_political.tsv', sep='\t', index=False)
+        print(
+            "Saving non political user features dataframe to TSV: {}".format('{}_non_political.tsv'.format(fname_base)))
+        non_pol_df.to_csv(OUT_DIRECTORY + '{}_non_political.tsv'.format(fname_base), sep='\t', index=False)
+
+
+def parse_year_month_from_filename(month_file):
+    return month_file.rsplit('/', 1)[-1].rsplit('.', 1)[0]
 
 
 def get_political_user_features(source):
