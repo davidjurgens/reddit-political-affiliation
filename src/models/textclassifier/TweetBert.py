@@ -19,8 +19,8 @@ from nltk.tokenize import word_tokenize
 import numpy as np
 
 def downsampling(data):
-    data_majority = data[data.politics_y == ("Republican" if training_name=="flair" or "community" else "Democrat")]
-    data_minority = data[data.politics_y == ("Democrat" if training_name=="flair" or "community" else "Republican")]
+    data_majority = data[data.politics_y == ("Republican" if training_name=="flair" or training_name=="community" else "Democrat")]
+    data_minority = data[data.politics_y == ("Democrat" if training_name=="flair" or training_name=="community" else "Republican")]
     majority_down_sampled = resample(data_majority, n_samples=len(data_minority), random_state=42)
     return pd.concat([majority_down_sampled, data_minority],ignore_index=True).sample(frac=1)
 
@@ -45,7 +45,8 @@ def read_in_comments(in_file, count=-1):
 
 def prepare_features(seq_1, max_seq_length=64, zero_pad=True, include_CLS_token=True, include_SEP_token=True):
     # Tokenize Input
-    tokens = tokenizer.tokenize(seq_1)[0:max_seq_length - 2]
+    #print(seq_1)
+    tokens = tokenizer.tokenize(str(seq_1))[0:max_seq_length - 2]
     # Initialize Tokens
     if include_CLS_token:
         tokens.insert(0, tokenizer.cls_token)
@@ -115,7 +116,7 @@ def evaluate_by_user(model,data,name=""):
     for sent, mask, label, user_name in tqdm(data):
         #print(sent.shape)
         #origin_sent=tokenizer.batch_decode(sent)
-        #print(len(origin_sent))
+        #print(origin_sent)
         sent = sent.cuda()
         label = label.cuda()
         mask = mask.cuda()
@@ -185,21 +186,32 @@ def evaluate(model, data):
     return classification_report(y_true, y_pred, output_dict=True)['macro avg']['f1-score']
 
 
-
-train_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/train.json'
-test_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/test.json'
-dev_dir = '/shared/0/projects/reddit-political-affiliation/data/word2vec/log-reg/save_all_users/dev.json'
 comments_dir = '/shared/0/projects/reddit-political-affiliation/data/bert-text-classify/'
 
-
+#gold/flair-9
 if __name__ == '__main__':
     dv="cuda:4"
-    load_from=4
+    load_from=9
     test_mode=1
 
-    in_file = '/shared/0/projects/reddit-political-affiliation/data/interactions/all_comments_filtered.tsv'
-    comments = read_in_comments(in_file,count=-1)
-    df_comments = pd.DataFrame(comments)
+    model_name=""
+
+    remove_self_declare=True
+    if remove_self_declare:
+       model_name+="Remove_self_declare"
+
+    in_file = '/shared/0/projects/reddit-political-affiliation/data/interactions/20_comments'+("_drop_self_declare" if remove_self_declare else "")+'.tsv'
+    is_20_comments = True
+    if is_20_comments:
+        model_name+="20Comments_"
+        df_comments = pd.read_csv(in_file, sep="\t")
+        print("Finish Data Loading", df_comments.shape)
+    else:
+        model_name+="allComments"
+        comments = read_in_comments(in_file,count=-1)
+        df_comments = pd.DataFrame(comments)
+
+    print(df_comments)
 
     cong_dir = '/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/'
     train_cong = pd.read_csv(cong_dir + 'train.tsv', sep='\t')
@@ -265,15 +277,20 @@ if __name__ == '__main__':
     #     #merged_dev = merged_train[merged_dev['subreddit'] == 'politics']
     #     model_name += "_politics"
 
-    model_name = "Roberta"
-    config = RobertaConfig.from_pretrained('roberta-base')
+    model_name += "Roberta_tune"
+    #config = RobertaConfig.from_pretrained('roberta-base')
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
-    model = RobertaForSequenceClassification(config)
+    model = RobertaForSequenceClassification.from_pretrained('roberta-base')
 
-    training_name='flair'
+    training_name='community'
     model_name+="_"+training_name
     training_data=merged_train[merged_train['source']==training_name].reset_index()
-    # print(training_data)
+    if training_name=='silver':
+        additional_training_data = merged_train[merged_train['source'] == 'gold'].reset_index()
+        model_name+='_full'
+        training_data=pd.concat([training_data,additional_training_data])
+    print(training_data)
+
 
     is_downsampling = True
     if is_downsampling:
@@ -290,8 +307,8 @@ if __name__ == '__main__':
     #     total_len_list.append(len(words))
     # print(np.mean(total_len_list),np.std(total_len_list),np.percentile(total_len_list,80))
 
-
-    train_set = Intents(training_data)
+    print (training_data)
+    train_set = Intents(training_data.sample(frac=1))
     test_set = Intents(merged_test)
     dev_set = Intents(merged_dev)
     params = {'batch_size': 64, 'shuffle': True, 'drop_last': False, 'num_workers': 0}
@@ -299,7 +316,6 @@ if __name__ == '__main__':
     test_loader = DataLoader(test_set, **params)
     dev_loader = DataLoader(dev_set, **params)
     print(len(train_loader), len(test_loader), len(dev_loader))
-
 
     if not test_mode:
         if load_from != -1:
@@ -319,6 +335,7 @@ if __name__ == '__main__':
             for epoch in range(max_epochs-load_from-1):
                 model.train()
                 print("EPOCH -- {}".format(epoch))
+                total_loss=0
                 for i, (sent, mask, label,_) in tqdm(enumerate(train_loader), total=iter_length):
                     optimizer.zero_grad()
                     sent = sent.cuda()
@@ -328,6 +345,7 @@ if __name__ == '__main__':
                     output = model.forward(sent,attention_mask=mask)[0]
                     _, predicted = torch.max(output, 1)
                     loss = loss_function(output, label)
+                    total_loss+=loss.data.item()
                     loss.backward()
                     optimizer.step()
 
@@ -345,7 +363,7 @@ if __name__ == '__main__':
                 torch.save(model.state_dict(),
                            comments_dir + model_name+"_Text_Classifier_" + str(epoch + load_from + 1) + ".pt")
                 #     best = mc
-
+                print ("Loss in this epoch:", total_loss/iter_length)
         except KeyboardInterrupt:
             torch.save(model.state_dict(), comments_dir + model_name +"_Text_Classifier_"  + "finished.pt")
             #print("Evaluation on test set:")
@@ -355,12 +373,16 @@ if __name__ == '__main__':
     else:
         model.load_state_dict(torch.load(comments_dir+ model_name +"_Text_Classifier_"+str(load_from)+".pt" , map_location=device))
         model.cuda()
+        # for name,param in model.named_parameters():
+        #     if param.requires_grad:
+        #         print(name,param.data)
+        #print (model.parameters())
         print("Evaluation on test set:")
 
         gold_test=merged_test[merged_test['source']=='gold'].reset_index()
         silver_test = merged_test[merged_test['source'] == 'silver'].reset_index()
         flair_test = merged_test[merged_test['source'] == 'flair'].reset_index()
-        community_test=merged_test[merged_test['source']=='community'].reset_index()
+        community_test=merged_test[merged_test['source'] == 'community'].reset_index()
 
         print(gold_test)
 
