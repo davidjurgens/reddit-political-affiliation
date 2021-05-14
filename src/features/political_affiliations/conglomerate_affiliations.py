@@ -1,7 +1,7 @@
-import glob
 import random
 import sys
 from collections import defaultdict
+from glob import glob
 from itertools import islice
 
 import pandas as pd
@@ -23,31 +23,23 @@ OUTPUT_DIRECTORY = "/shared/0/projects/reddit-political-affiliation/data/conglom
 
 
 def grab_all_data_sources():
-    silver_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/silver/*.tsv")
-    gold_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/gold/*.tsv")
-    flair_files = glob.glob("/shared/0/projects/reddit-political-affiliation/data/flair-affiliations/*.tsv")
+    gold_files = glob("/shared/0/projects/reddit-political-affiliation/data/comment-affiliations/gold/*.tsv")
+    flair_files = glob("/shared/0/projects/reddit-political-affiliation/data/flair-affiliations/*.tsv")
+    community_files = glob("/shared/0/projects/reddit-political-affiliation/data/community-affiliations/*.tsv")
 
-    print("Number of silver files: {}".format(silver_files))
     print("Number of gold files: {}".format(gold_files))
     print("Number of flair files: {}".format(flair_files))
+    print("Number of community files: {}".format(community_files))
 
-    silver_data = read_in_user_politics(silver_files)
     gold_data = read_in_user_politics(gold_files)
     flair_data = read_in_flair_affiliations(flair_files)
+    community_data = get_user_politics_for_community_labels()
 
-    return {'silver': silver_data, 'gold': gold_data, 'flair': flair_data}
+    return {'gold': gold_data, 'flair': flair_data, 'community': community_data}
 
 
 def build_df(data_by_source):
     user_entries = defaultdict(list)
-
-    print("Working on silver data")
-    for user, user_politics in data_by_source['silver'].items():
-        for entry in user_politics:
-            row = {'username': user, 'source': 'silver', 'politics': entry['politics'], 'subreddit': entry['subreddit'],
-                   'created': entry['created']}
-            if not value_already_exists(user_entries, row):
-                user_entries[user].append(row)
 
     print("Working on gold data")
     for user, user_politics in data_by_source['gold'].items():
@@ -139,19 +131,10 @@ def filter_bad_actors(df):
     return df[~df['username'].isin(bad_actors)]
 
 
-def get_train_political_affiliations():
+def get_political_affiliations(source):
+    assert source == 'train' or source == 'dev' or source == 'test'
     return read_in_political_affiliations(
-        "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/train.tsv")
-
-
-def get_test_political_affiliations():
-    return read_in_political_affiliations(
-        "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/test.tsv")
-
-
-def get_dev_political_affiliations():
-    return read_in_political_affiliations(
-        "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/dev.tsv")
+        "/shared/0/projects/reddit-political-affiliation/data/conglomerate-affiliations/{}.tsv".format(source))
 
 
 def get_df(name):
@@ -160,14 +143,14 @@ def get_df(name):
 
 
 def get_train_users(source):
-    assert source == 'flair' or source == 'community' or source == 'gold' or source == 'silver'
+    assert source == 'flair' or source == 'community' or source == 'gold'
     train_df = get_df('train')
     source_df = train_df[train_df['source'] == source]
     return set(source_df['username'].tolist())
 
 
 def get_train_users_by_politics(source, politics):
-    assert source == 'flair' or source == 'community' or source == 'gold' or source == 'silver'
+    assert source == 'flair' or source == 'community' or source == 'gold'
     assert politics == "Democrat" or politics == "Republican"
     train_df = get_df('train')
     source_df = train_df[train_df['source'] == source]
