@@ -1,5 +1,6 @@
 import random
 import sys
+sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 import torch.nn as nn
 import torch.optim as optim

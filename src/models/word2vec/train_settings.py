@@ -34,7 +34,7 @@ if args.network:
     network_path = args.network
 else:
     # network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year_month + '.tsv'
-    network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/silver/2019-10_1000subs_10posts.tsv'
+    network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/gold/2016_1000subs_10posts.tsv'
 
 if args.out:
     out_dir = args.out
@@ -55,7 +55,7 @@ if args.device:
     torch.cuda.set_device(int(args.device[-1]))
     device = torch.device(args.device)
 else:
-    device = torch.device("cuda:1")
+    device = torch.device("cuda:4")
     torch.cuda.set_device(0)
 
 load_from = args.load_from

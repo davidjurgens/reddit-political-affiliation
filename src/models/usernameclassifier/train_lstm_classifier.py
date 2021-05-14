@@ -8,7 +8,7 @@ import torch.optim as optim
 from torch import nn
 from torchtext.legacy.data import Field, LabelField, TabularDataset, BucketIterator
 from tqdm import tqdm
-from sklearn.metrics import auc, roc_curve
+from sklearn.metrics import auc, roc_curve,classification_report
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
@@ -18,7 +18,7 @@ from src.models.usernameclassifier.UsernameClassifier import UsernameClassifier
 BASE_DIR = '/shared/0/projects/reddit-political-affiliation/data/username-labels/'
 OUTPUT_DIRECTORY = "/shared/0/projects/reddit-political-affiliation/data/username-classifier/"
 TRAIN_SOURCE = "community"
-TEST_SOURCE = "all"
+TEST_SOURCE = "flair"
 
 print("Building datasets for train, dev, and test")
 TEXT = Field(tokenize=list, batch_first=True, include_lengths=True)
@@ -52,13 +52,13 @@ print(TEXT.vocab.freqs.most_common(10))
 print(TEXT.vocab.stoi)
 
 # check whether cuda is available
-device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:4' if torch.cuda.is_available() else 'cpu')
 
 BATCH_SIZE = 128
 
 # Load an iterator
-train_iterator, valid_iterator = BucketIterator.splits(
-    (training_data, dev_data),
+train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
+    (training_data, dev_data,test_data),
     batch_size=BATCH_SIZE,
     sort_key=lambda x: len(x.text),
     sort_within_batch=True,
@@ -143,28 +143,34 @@ def evaluate(model, iterator, criterion):
     model.eval()
 
     # deactivates autograd
-    with torch.no_grad():
-        for batch in iterator:
-            # retrieve text and no. of words
-            text, text_lengths = batch.text
+    #with torch.no_grad():
+    y_true=[]
+    y_pred=[]
+    for batch in iterator:
+        # retrieve text and no. of words
+        text, text_lengths = batch.text
 
-            # convert to 1d tensor
-            predictions = model(text, text_lengths).squeeze()
+        # convert to 1d tensor
+        predictions = model(text, text_lengths).squeeze()
 
-            # compute loss and accuracy
-            loss = criterion(predictions, batch.label)
-            acc = binary_accuracy(predictions, batch.label)
+        # compute loss and accuracy
+        loss = criterion(predictions, batch.label)
+        acc = binary_accuracy(predictions, batch.label)
 
-            fpr, tpr, thresholds = roc_curve(batch.label.cpu().detach().numpy(),
-                                             predictions.cpu().detach().numpy(), pos_label=1)
-            model_auc = auc(fpr, tpr)
+        fpr, tpr, thresholds = roc_curve(batch.label.cpu().detach().numpy(),
+                                         predictions.cpu().detach().numpy(), pos_label=1)
+        model_auc = auc(fpr, tpr)
 
-            # keep track of loss and accuracy
-            epoch_loss += loss.item()
-            epoch_acc += acc.item()
-            epoch_auc.append(model_auc)
+        y_true.extend(list(batch.label.cpu().detach().numpy()))
+        y_pred.extend(list(predictions.cpu().detach().numpy()))
+        # keep track of loss and accuracy
+        epoch_loss += loss.item()
+        epoch_acc += acc.item()
+        epoch_auc.append(model_auc)
+    y_pred=list(map(lambda x: 1 if x>0.5 else 0,y_pred))
+    clr = classification_report(y_true, y_pred, output_dict=True)
 
-    return epoch_loss / len(iterator), epoch_acc / len(iterator), np.mean(model_auc)
+    return epoch_loss / len(iterator), epoch_acc / len(iterator), np.mean(model_auc),clr
 
 
 N_EPOCHS = 40
@@ -176,38 +182,47 @@ for epoch in range(N_EPOCHS):
     train_loss, train_acc = train(model, train_iterator, optimizer, criterion)
 
     # evaluate the model
-    valid_loss, valid_acc, valid_auc = evaluate(model, valid_iterator, criterion)
+    valid_loss, valid_acc, valid_auc,valid_clr = evaluate(model, valid_iterator, criterion)
+
+    test_loss, test_acc, test_auc, test_clr = evaluate(model, test_iterator, criterion)
+    test_macro_f1=test_clr['macro avg']['f1-score']
+    #print(valid_clr)
+    #print(test_clr)
 
     # save the best model
     if valid_loss < best_valid_loss:
         best_valid_loss = valid_loss
+        print("here!!!",best_valid_loss)
         torch.save(model.state_dict(), OUTPUT_DIRECTORY + TRAIN_SOURCE + '/saved_weights.pt')
 
     print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
     print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}% |  Val. AUC: {valid_auc:.2f}%')
-
+    print(f'\t Test. macro-F1: {test_macro_f1:.4f} |  Test. Acc: {test_acc * 100:.4f}% |  Test. AUC: {test_auc:.4f}%')
 # Check out some of the predictions
 model.eval()
 
 dev_pred_df = defaultdict(list)
 
 # deactivates autograd
-with torch.no_grad():
-    for batch in tqdm(valid_iterator):
+#with torch.no_grad():
+model.eval()
+for batch in tqdm(valid_iterator):
 
-        # retrieve text and no. of words
-        text, text_lengths = batch.text
+    # retrieve text and no. of words
+    text, text_lengths = batch.text
 
-        # convert to 1d tensor
-        predictions = model(text, text_lengths).squeeze()
+    # convert to 1d tensor
+    predictions = model(text, text_lengths).squeeze()
 
-        for i, cids in enumerate(text.cpu()):
-            username = ''.join([TEXT.vocab.itos[cid] for cid in cids])
-            pred = predictions[i].cpu().item()
-            dev_pred_df['username'].append(username)
-            dev_pred_df['prediction'].append(pred)
+    for i, cids in enumerate(text.cpu()):
+        username = ''.join([TEXT.vocab.itos[cid] for cid in cids])
+        pred = predictions[i].cpu().item()
+        dev_pred_df['username'].append(username)
+        dev_pred_df['prediction'].append(pred)
 
         # print(text)
         # break
 dev_pred_df = pd.DataFrame(dev_pred_df)
 dev_pred_df.head()
+# save_path= '/shared/0/projects/reddit-political-affiliation/data/username-labels/user_prediction'
+# dev_pred_df.to_csv(save_path+"train_from_"+TRAIN_SOURCE+"_evaluate_on_"+TEST_SOURCE,sep='\t')
