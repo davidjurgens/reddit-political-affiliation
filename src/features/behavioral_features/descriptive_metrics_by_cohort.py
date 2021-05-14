@@ -13,7 +13,8 @@ from matplotlib import pyplot as plt
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.data.data_helper import get_all_raw_files
-from src.features.political_affiliations.conglomerate_affiliations import get_train_users, get_all_political_users
+from src.features.political_affiliations.conglomerate_affiliations import get_train_users, get_train_users_by_politics, \
+    get_all_political_users
 from src.features.behavioral_features.collect_samples import collect_non_political_usernames
 
 DATA_DIRECTORY = "/shared/2/datasets/reddit-dump-all/user-subreddit-counts/"
@@ -30,9 +31,6 @@ def get_random_sample_of_each_data_source(n=10000):
     gold_users = get_train_users('gold')
     gold_users = set(random.sample(gold_users, n))
 
-    silver_users = get_train_users('silver')
-    silver_users = set(random.sample(silver_users, n))
-
     community_users = get_train_users('community')
     community_users = set(random.sample(community_users, n))
 
@@ -42,16 +40,37 @@ def get_random_sample_of_each_data_source(n=10000):
 
     return {'flair': flair_users,
             'gold': gold_users,
-            'silver': silver_users,
             'community': community_users,
             'non-political': non_political_usernames}
+
+
+def get_random_sample_of_each_data_source_and_politics(n=3000):
+    flair_rep_users = get_train_users_by_politics('flair', 'Republican')
+    flair_dem_users = get_train_users_by_politics('flair', 'Democrat')
+    flair_rep_users = set(random.sample(flair_rep_users, n))
+    flair_dem_users = set(random.sample(flair_dem_users, n))
+
+    gold_rep_users = get_train_users_by_politics('gold', 'Republican')
+    gold_dem_users = get_train_users_by_politics('gold', 'Democrat')
+    gold_rep_users = set(random.sample(gold_rep_users, n))
+    gold_dem_users = set(random.sample(gold_dem_users, n))
+
+
+    community_rep_users = get_train_users_by_politics('community', 'Republican')
+    community_dem_users = get_train_users_by_politics('community', 'Democrat')
+    community_rep_users = set(random.sample(community_rep_users, n))
+    community_dem_users = set(random.sample(community_dem_users, n))
+
+    return {'flair_rep': flair_rep_users, 'flair_dem': flair_dem_users,
+            'gold_rep': gold_rep_users, 'gold_dem': gold_dem_users,
+            'community_rep_users': community_rep_users, 'community_dem_users': community_dem_users}
 
 
 def get_total_comment_counts(users, source_name):
     month_files = glob(DATA_DIRECTORY + "*.gz")
     user_comment_count = defaultdict(int)
 
-    for month_file in month_files[:3]:
+    for month_file in month_files[:20]:
         print("Working on counting total comments for {} users on file: {}".format(source_name, month_file))
         with gzip.open(month_file, 'r') as f:
             for line in f:
@@ -103,7 +122,7 @@ def plot_log_comment_counts(user_comment_counts_by_source):
             rows.append(entry)
     df = pd.DataFrame(rows)
 
-    ax = sns.displot(df, x="comment_count", hue="source", kind="kde", log_scale=True, multiple="stack")
+    ax = sns.displot(df, x="comment_count", hue="source", kind="kde", log_scale=True)
     plt.show()
 
 
