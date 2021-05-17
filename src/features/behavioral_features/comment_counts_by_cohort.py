@@ -10,6 +10,8 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 
+from src.features.behavioral_features.collect_user_features import get_all_user_features
+
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
 from src.data.data_helper import get_all_raw_files
@@ -83,6 +85,21 @@ def get_total_comment_counts(users, source_name):
     return user_comment_count
 
 
+def get_total_karma_and_controversiality_counts(users, source_name):
+    print("Grabbing user karma and controversiality for " + source_name)
+    all_user_features = get_all_user_features()
+    user_features = all_user_features[all_user_features['username'].isin(users)]
+
+    user_karma, user_controversiality = {}, {}
+
+    for row in user_features.itertuples():
+        user, karma, controversiality = row.username, row.total_score, row.total_controversiality
+        user_karma[user] = int(karma)
+        user_controversiality[user] = int(controversiality)
+
+    return user_karma, user_controversiality
+
+
 def save_comment_counts(user_comment_count, source_name):
     out_file = OUTPUT_DIRECTORY + source_name + '_comment_counts.tsv'
     print("Saving comment counts to file: {}".format(out_file))
@@ -133,6 +150,7 @@ def run(users, source_name):
 
 
 if __name__ == '__main__':
+
     users_by_source = get_random_sample_of_each_data_source()
     user_comment_counts_by_source = {}
 
