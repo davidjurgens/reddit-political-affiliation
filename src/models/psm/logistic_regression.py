@@ -1,61 +1,128 @@
-import glob
-import random
+import sys
 
 import pandas as pd
-import seaborn as sns
-from matplotlib import pyplot as plt
+from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
+sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
+
 TEST_SPLIT = 0.1
 
 
-def read_in_features_df(in_files):
-    print("Total # of months of data: {}".format(len(in_files)))
-    return pd.concat((pd.read_csv(f, sep='\t') for f in in_files))
+def train_combined_model(df_train):
+    df_train = set_is_either_flip(df_train)
+    train, test = train_test_split(df_train, test_size=0.1)
+    train, test = train.drop(['dem_flip', 'rep_flip'], axis=1), test.drop(['dem_flip', 'rep_flip'], axis=1)
+
+    y, X = train['is_flip'], train.drop('is_flip', axis=1)
+    clf = LogisticRegression(random_state=0).fit(X, y)
+
+    y_labels, X_test = test['is_flip'], test.drop('is_flip', axis=1)
+    y_preds = clf.predict(X_test)
+
+    print("RESULTS FOR COMBINED MODEL")
+    print(classification_report(y_labels, y_preds))
+    print(accuracy_score(y_labels, y_preds))
+
+    # TODO: Save predictions
+
+    coef_dict = {}
+    for coef, feat in zip(clf.coef_[0, :], X.columns):
+        coef_dict[feat] = coef
+
+    coef_dict = {k: v for k, v in sorted(coef_dict.items(), key=lambda item: item[1])}
+    print(coef_dict)
+
+    return clf
 
 
-def train_logistic_clf(df_train):
+def train_rep_to_dem_model(df_train):
+    train, test = train_test_split(df_train, test_size=0.1)
+    train, test = train.drop('dem_flip', axis=1), test.drop('dem_flip', axis=1)
+
+    y, X = train['rep_flip'], train.drop('rep_flip', axis=1)
+    clf = LogisticRegression(random_state=0).fit(X, y)
+
+    y_labels, X_test = test['rep_flip'], test.drop('rep_flip', axis=1)
+    y_preds = clf.predict(X_test)
+
+    print("RESULTS FOR REP TO DEM MODEL")
+    print(classification_report(y_labels, y_preds))
+    print(accuracy_score(y_labels, y_preds))
+
+    # TODO: Save predictions
+
+    coef_dict = {}
+    for coef, feat in zip(clf.coef_[0, :], X.columns):
+        coef_dict[feat] = coef
+
+    coef_dict = {k: v for k, v in sorted(coef_dict.items(), key=lambda item: item[1])}
+    print(coef_dict)
+
+    return clf
+
+
+def train_dem_to_rep_model(df_train):
+    train, test = train_test_split(df_train, test_size=0.1)
+
+    train, test = train.drop('rep_flip', axis=1), test.drop('rep_flip', axis=1)
+    print(len(train), len(test))
+
+    y, X = train['dem_flip'], train.drop('dem_flip', axis=1)
+    clf = LogisticRegression(random_state=0).fit(X, y)
+
+    y_labels, X_test = test['dem_flip'], test.drop('dem_flip', axis=1)
+    y_preds = clf.predict(X_test)
+
+    print("RESULTS FOR DEM TO REP MODEL")
+    print(classification_report(y_labels, y_preds))
+    print(accuracy_score(y_labels, y_preds))
+
+    # TODO: Save predictions
+
+    coef_dict = {}
+    for coef, feat in zip(clf.coef_[0, :], X.columns):
+        coef_dict[feat] = coef
+
+    coef_dict = {k: v for k, v in sorted(coef_dict.items(), key=lambda item: item[1])}
+    print(coef_dict)
+
+    return clf
+
+
+def train_dummy_clf(df_train):
     print("Training logistic regression model")
-    y, X = df_train['is_political'], df_train.drop('is_political', axis=1)
-    return LogisticRegression(random_state=0).fit(X, y)
+    y, X = df_train['is_flip'], df_train.drop('is_flip', axis=1)
+    return DummyClassifier(strategy="most_frequent").fit(X, y)
 
 
 def test_logistic_clf(clf, df_test):
-    y_labels, X_test = df_test['is_political'], df_test.drop('is_political', axis=1)
+    y_labels, X_test = df_test['is_flip'], df_test.drop('is_flip', axis=1)
     y_preds = clf.predict(X_test)
     print(classification_report(y_labels, y_preds))
     print(accuracy_score(y_labels, y_preds))
 
 
-def plot_probability_score_distribution(clf, df_test):
-    y_labels, X_test = df_test['is_political'], df_test.drop('is_political', axis=1)
-    probabilities = clf.predict_proba(X_test)
-    sns.displot(probabilities)
-    plt.show()
-    return
+def set_is_either_flip(df):
+    is_flip = []
+    for row in df.itertuples():
+        if row.rep_flip or row.dem_flip:
+            is_flip.append(1)
+        else:
+            is_flip.append(0)
 
-
-def get_prob_distribution(in_files):
-    df = read_in_features_df(files[:10])
-    train, test = train_test_split(df, test_size=TEST_SPLIT)
-    print("Total number of users in train: {}. Total number of users in test: {}".format(len(train), len(test)))
-    clf = train_logisitic_clf(train)
-    y_labels, X_test = df_test['is_political'], df_test.drop('is_political', axis=1)
-    probabilities = clf.predict_proba(X_test)
-    test_logistic_clf(clf, test)
-    plot_probability_score_distribution(clf, test)
-    return
+    df['is_flip'] = is_flip
+    return df
 
 
 if __name__ == '__main__':
-    files = glob.glob('/shared/0/projects/reddit-political-affiliation/data/psm/features/gold/*.tsv')
-    random.shuffle(files)
-    df = read_in_features_df(files[:10])
-    train, test = train_test_split(df, test_size=TEST_SPLIT)
-    print("Total number of users in train: {}. Total number of users in test: {}".format(len(train), len(test)))
-    clf = train_logisitic_clf(train)
-    test_logistic_clf(clf, test)
-    plot_probability_score_distribution(clf, test)
+    df = pd.read_csv("/shared/0/projects/reddit-political-affiliation/data/user-features/training_df.tsv", sep='\t')
+    # Convert source from flair/community/gold into 0, 1, 2
+    df['source'] = df['source'].astype('category').cat.codes
+
+    train_combined_model(df)
+    train_rep_to_dem_model(df)
+    train_dem_to_rep_model(df)
