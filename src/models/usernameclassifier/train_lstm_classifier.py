@@ -5,10 +5,10 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.optim as optim
+from sklearn.metrics import auc, roc_curve, classification_report
 from torch import nn
 from torchtext.legacy.data import Field, LabelField, TabularDataset, BucketIterator
 from tqdm import tqdm
-from sklearn.metrics import auc, roc_curve,classification_report
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
 
@@ -58,7 +58,7 @@ BATCH_SIZE = 128
 
 # Load an iterator
 train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
-    (training_data, dev_data,test_data),
+    (training_data, dev_data, test_data),
     batch_size=BATCH_SIZE,
     sort_key=lambda x: len(x.text),
     sort_within_batch=True,
@@ -143,9 +143,9 @@ def evaluate(model, iterator, criterion):
     model.eval()
 
     # deactivates autograd
-    #with torch.no_grad():
-    y_true=[]
-    y_pred=[]
+    # with torch.no_grad():
+    y_true = []
+    y_pred = []
     for batch in iterator:
         # retrieve text and no. of words
         text, text_lengths = batch.text
@@ -167,10 +167,10 @@ def evaluate(model, iterator, criterion):
         epoch_loss += loss.item()
         epoch_acc += acc.item()
         epoch_auc.append(model_auc)
-    y_pred=list(map(lambda x: 1 if x>0.5 else 0,y_pred))
+    y_pred = list(map(lambda x: 1 if x > 0.5 else 0, y_pred))
     clr = classification_report(y_true, y_pred, output_dict=True)
 
-    return epoch_loss / len(iterator), epoch_acc / len(iterator), np.mean(model_auc),clr
+    return epoch_loss / len(iterator), epoch_acc / len(iterator), np.mean(model_auc), clr
 
 
 N_EPOCHS = 40
@@ -182,17 +182,17 @@ for epoch in range(N_EPOCHS):
     train_loss, train_acc = train(model, train_iterator, optimizer, criterion)
 
     # evaluate the model
-    valid_loss, valid_acc, valid_auc,valid_clr = evaluate(model, valid_iterator, criterion)
+    valid_loss, valid_acc, valid_auc, valid_clr = evaluate(model, valid_iterator, criterion)
 
     test_loss, test_acc, test_auc, test_clr = evaluate(model, test_iterator, criterion)
-    test_macro_f1=test_clr['macro avg']['f1-score']
-    #print(valid_clr)
-    #print(test_clr)
+    test_macro_f1 = test_clr['macro avg']['f1-score']
+    # print(valid_clr)
+    # print(test_clr)
 
     # save the best model
     if valid_loss < best_valid_loss:
         best_valid_loss = valid_loss
-        print("here!!!",best_valid_loss)
+        print("here!!!", best_valid_loss)
         torch.save(model.state_dict(), OUTPUT_DIRECTORY + TRAIN_SOURCE + '/saved_weights.pt')
 
     print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
@@ -204,7 +204,7 @@ model.eval()
 dev_pred_df = defaultdict(list)
 
 # deactivates autograd
-#with torch.no_grad():
+# with torch.no_grad():
 model.eval()
 for batch in tqdm(valid_iterator):
 

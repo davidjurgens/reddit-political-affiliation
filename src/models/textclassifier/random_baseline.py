@@ -1,12 +1,7 @@
 import sys
 
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
-from src.features.interactions.political_comment import PoliticalComment
-import json
 from sklearn.metrics import classification_report
-from sklearn.utils import resample
-from json import JSONDecodeError
-from tqdm import tqdm
 import pandas as pd
 import numpy as np
 
@@ -33,9 +28,9 @@ evaluating = 'flair'  # can be flair gold silver all
 eval_from_flair = pd.read_csv(saved_path + "Roberta_flair_downsampling_" + evaluating + ".tsv", sep='\t')
 eval_from_flair = eval_from_flair.drop_duplicates(subset="username", keep="last").reset_index()
 print(eval_from_flair)
-label=eval_from_flair['politics']
-#rand=np.random.randint(2, size=len(label))
-rand=1-np.zeros(len(label))
+label = eval_from_flair['politics']
+# rand=np.random.randint(2, size=len(label))
+rand = 1 - np.zeros(len(label))
 crf = classification_report(label, rand, output_dict=True)
 crf2 = classification_report(label, rand, output_dict=False)
 print(crf)

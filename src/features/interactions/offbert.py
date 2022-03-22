@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, random_split
-from transformers import BertTokenizer, BertForSequenceClassification, BertConfig, AdamW
+from transformers import BertTokenizer, BertForSequenceClassification, AdamW
 from tqdm import tqdm
 from sklearn.metrics import classification_report
 
@@ -125,12 +125,13 @@ if __name__ == '__main__':
 
     train_set = load_train(train_dir)
     test_set = load_test(test_text_dir, test_label_dir)
-    train_set, dev_set = random_split(train_set, [len(train_set) - len(test_set), len(test_set)], generator=torch.Generator().manual_seed(42))
+    train_set, dev_set = random_split(train_set, [len(train_set) - len(test_set), len(test_set)],
+                                      generator=torch.Generator().manual_seed(42))
 
     device = torch.device(dv)
     torch.cuda.set_device(int(dv[-1]))
 
-    #config = BertConfig.from_pretrained('bert-base-uncased')
+    # config = BertConfig.from_pretrained('bert-base-uncased')
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     model = BertForSequenceClassification.from_pretrained('bert-base-uncased')
 
@@ -175,13 +176,16 @@ if __name__ == '__main__':
             mc = evaluate(model, dev_loader)
             if mc > best:
                 print("Updating Best Score:", str(mc), "saving model...")
-                torch.save(model.state_dict(), "/shared/0/projects/reddit-political-affiliation/data/interactions_features/best_bert.pt")
+                torch.save(model.state_dict(),
+                           "/shared/0/projects/reddit-political-affiliation/data/interactions_features/best_bert.pt")
                 best = mc
     else:
-        model.load_state_dict(torch.load("/shared/0/projects/reddit-political-affiliation/data/interactions_features/best_bert.pt", map_location=device))
+        model.load_state_dict(
+            torch.load("/shared/0/projects/reddit-political-affiliation/data/interactions_features/best_bert.pt",
+                       map_location=device))
         print("Evaluation on test set:")
         mc = evaluate(model, test_loader)
-        print (mc)
+        print(mc)
         print("Evaluation on dev set:")
         mc = evaluate(model, dev_loader)
         print(mc)
