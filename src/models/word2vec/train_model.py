@@ -1,26 +1,24 @@
 import random
 import sys
-
 sys.path.append('/home/kalkiek/projects/reddit-political-affiliation/')
-
+from collections import defaultdict
+import pandas as pd
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from tqdm import tqdm
 
-sys.path.append('../..')  # make it work in the root directory
-sys.path.append('.')
-
 from src.data.word2vec.make_dataset import build_dataset
 from src.models.word2vec.User2Subreddit import User2Subreddit
 from src.models.word2vec.train_settings import *
 
-from sklearn.metrics import auc, roc_curve
+from sklearn.metrics import auc, roc_curve, classification_report
 
 torch.manual_seed(42)
-
-dataset, training, validation, pol_validation, vocab, all_subreddits = build_dataset(network_path,
+train_souce='community'
+test_source='community'
+dataset, training, validation, pol_validation, vocab, all_subreddits = build_dataset(network_path,train_souce,test_source,
                                                                                      max_users=args.max_users)
 dataset.id_mappings_to_tsv(data_directory)
 
@@ -34,6 +32,9 @@ validation_loader = DataLoader(validation, **params)
 iter_length = len(training) / batch_size
 
 model = User2Subreddit(dataset.num_users(), embedding_dim, dataset.num_subreddits())
+
+out_dir+=train_souce+'/'+test_source+"_"
+
 if load_from != -1:
     model.load_state_dict(torch.load(out_dir + str(load_from) + '.pt', map_location=device))
     print("load from" + str(load_from) + ".pt")
@@ -65,11 +66,14 @@ def training_iteration(epoch, i, model, data, pol_loss):
         pol_labels = torch.LongTensor([v for v in politics_labels if v >= 0]).float().to(device)
 
         # Squeeze call necessary to go from (k, 1) to (k) dimensions due to batching
-        pol_loss = loss_function(pol_preds.squeeze(), pol_labels)
+        #print(pol_preds,pol_labels)
+        if len(pol_labels)>1:
+            #print(pol_preds.squeeze().shape,pol_labels.shape)
+            pol_loss = loss_function(pol_preds.squeeze(), pol_labels)
 
-        writer.add_scalar('political loss', pol_loss.cpu().detach().numpy().item(),
-                          i * batch_size + epoch * len(training))
-        loss += pol_loss
+            writer.add_scalar('political loss', pol_loss.cpu().detach().numpy().item(),
+                              i * batch_size + epoch * len(training))
+            loss += pol_loss
 
     loss.backward()
     optimizer.step()
@@ -110,7 +114,6 @@ def pol_validation_iteration(model, sample_size, step):
             pol_labels.append(pol_label)
         except KeyError:
             pass
-
     user_ids = torch.LongTensor(user_ids).to(device)
     pol_labels = torch.FloatTensor(pol_labels).to(device)
 
@@ -118,16 +121,31 @@ def pol_validation_iteration(model, sample_size, step):
     political_predictions = model.political_layer(emb_p)
     political_predictions = torch.sigmoid(political_predictions)
 
+    #print(pol_label,political_predictions)
     fpr, tpr, thresholds = roc_curve(pol_labels.cpu().detach().numpy(),
                                      political_predictions.cpu().detach().numpy(), pos_label=1)
     pol_auc = auc(fpr, tpr)
 
+    y_true=(list(pol_labels.cpu().detach().numpy()))
+    y_pred=(list(political_predictions.cpu().detach().numpy()))
+    y_score=list(map(lambda x:x[0],y_pred))
+    y_pred=list(map(lambda x: 1 if x >0.5 else 0,y_pred))
+    clr = classification_report(y_true, y_pred, output_dict=False)
+    print(clr)
+    clr2 = classification_report(y_true, y_pred, output_dict=True)
+    print(clr2)
     # Predict the political affiliations and compute the loss
     pol_loss = loss_function(political_predictions.squeeze(), pol_labels).cpu().detach().numpy().item()
     print("Validation political loss at step %d: %f; AUC: %f" % (step, pol_loss, pol_auc))
     writer.add_scalar('validation political loss', pol_loss, step)
     writer.add_scalar('validation political AUC', pol_auc, step)
 
+    dev_pred_df = defaultdict(list)
+    dev_pred_df['true']=y_true
+    dev_pred_df['pred']=y_pred
+    dev_pred_df['score']=y_score
+    dev_pred_df = pd.DataFrame(dev_pred_df)
+    dev_pred_df.to_csv(out_dir+test_source+'.tsv',sep='\t')
     # After evaluation, turn training back on
     model.train(True)
 
@@ -138,24 +156,28 @@ if __name__ == '__main__':
                          'r/Aww', 'r/Games', 'r/Hunting', 'r/Feminism', 'r/The_Donald',
                          'r/lawnmowers', 'r/juul', 'r/teenagers']
 
-    for epoch in tqdm(range(EPOCHS), desc='Epoch'):
-        p_loss = 0
-        for i, data in enumerate(tqdm(train_loader, total=iter_length), 1):
-            step = i * batch_size + epoch * len(training)
-            model, loss, p_loss = training_iteration(epoch, i, model, data, p_loss)
 
-            writer.add_scalar('word2vec loss', loss.cpu().detach().numpy().item(),
-                              i * batch_size + epoch * len(training))
+    test_mode=1
+    if not test_mode:
+        for epoch in tqdm(range(EPOCHS), desc='Epoch'):
+            p_loss = 0
+            for i, data in enumerate(tqdm(train_loader, total=iter_length), 1):
+                step = i * batch_size + epoch * len(training)
+                model, loss, p_loss = training_iteration(epoch, i, model, data, p_loss)
 
-            if i % 100 == 0:
-                print(' loss at epoch %d, step %d: %f; political loss: %f' \
-                      % (epoch, i, loss.cpu().detach().numpy(),
-                         p_loss.cpu().detach().numpy()))
+                writer.add_scalar('word2vec loss', loss.cpu().detach().numpy().item(),
+                                  i * batch_size + epoch * len(training))
 
-            # if i % int(iter_length/10) == 0:
-            if i % 500 == 0:
-                pol_validation_iteration(model, sample_size=100, step=step)
-                validation_iteration(epoch, model, sample_size=10000)
+                # if i % 100 == 0:
+                #     print(p_loss)
+                #     print(' loss at epoch %d, step %d: %f; political loss: %f' \
+                #           % (epoch, i, loss.cpu().detach().numpy(),
+                #              p_loss.cpu().detach().numpy()))
+
+                # if i % int(iter_length/10) == 0:
+                #if i % 500 == 0:
+            pol_validation_iteration(model, sample_size=len(pol_validation), step=step)
+            validation_iteration(epoch, model, sample_size=len(pol_validation))
 
         # Run all the validation stuff at the end of the epoch
         # pol_validation_iteration(model, sample_size=100, step=step)
@@ -166,9 +188,12 @@ if __name__ == '__main__':
         #         save_similar_embeddings_to_tsv(sub, similar_subs, epoch, step, out_dir)
 
         # Save the model after every epoch
-        torch.save(model.state_dict(), out_dir + str(epoch + load_from + 1) + ".pt")
+            torch.save(model.state_dict(), out_dir + str(epoch + load_from + 1) + ".pt")
 
-    writer.close()
+        writer.close()
+    else:
+        model.load_state_dict(torch.load(out_dir + str(load_from) + ".pt", map_location=device))
+        pol_validation_iteration(model, sample_size=len(pol_validation), step=0)
 
     # When the model is done training predict all user affiliations
     # predict_user_affiliations(model, dataset, out_dir=out_dir)

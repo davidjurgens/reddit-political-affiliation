@@ -17,8 +17,8 @@ from src.models.usernameclassifier.UsernameClassifier import UsernameClassifier
 # SETTINGS
 BASE_DIR = '/shared/0/projects/reddit-political-affiliation/data/username-labels/'
 OUTPUT_DIRECTORY = "/shared/0/projects/reddit-political-affiliation/data/username-classifier/"
-TRAIN_SOURCE = "community"
-TEST_SOURCE = "flair"
+TRAIN_SOURCE = "flair"
+TEST_SOURCE = "community"
 
 print("Building datasets for train, dev, and test")
 TEXT = Field(tokenize=list, batch_first=True, include_lengths=True)
@@ -173,56 +173,66 @@ def evaluate(model, iterator, criterion):
     return epoch_loss / len(iterator), epoch_acc / len(iterator), np.mean(model_auc), clr
 
 
-N_EPOCHS = 40
+N_EPOCHS = 10
 best_valid_loss = float('inf')
 
-for epoch in range(N_EPOCHS):
+test_mode=1
+if not test_mode:
+    for epoch in range(N_EPOCHS):
 
-    # train the model
-    train_loss, train_acc = train(model, train_iterator, optimizer, criterion)
+        # train the model
+        train_loss, train_acc = train(model, train_iterator, optimizer, criterion)
 
-    # evaluate the model
-    valid_loss, valid_acc, valid_auc, valid_clr = evaluate(model, valid_iterator, criterion)
 
-    test_loss, test_acc, test_auc, test_clr = evaluate(model, test_iterator, criterion)
-    test_macro_f1 = test_clr['macro avg']['f1-score']
-    # print(valid_clr)
-    # print(test_clr)
+        # evaluate the model
+        valid_loss, valid_acc, valid_auc,valid_clr = evaluate(model, valid_iterator, criterion)
 
-    # save the best model
-    if valid_loss < best_valid_loss:
-        best_valid_loss = valid_loss
-        print("here!!!", best_valid_loss)
-        torch.save(model.state_dict(), OUTPUT_DIRECTORY + TRAIN_SOURCE + '/saved_weights.pt')
+        test_loss, test_acc, test_auc, test_clr = evaluate(model, test_iterator, criterion)
+        test_macro_f1=test_clr['macro avg']['f1-score']
+        #print(valid_clr)
+        #print(test_clr)
 
-    print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
-    print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}% |  Val. AUC: {valid_auc:.2f}%')
-    print(f'\t Test. macro-F1: {test_macro_f1:.4f} |  Test. Acc: {test_acc * 100:.4f}% |  Test. AUC: {test_auc:.4f}%')
+        # save the best model
+        if valid_loss < best_valid_loss:
+            best_valid_loss = valid_loss
+            print("here!!!",best_valid_loss)
+            torch.save(model.state_dict(), OUTPUT_DIRECTORY + TRAIN_SOURCE + '/'+ TEST_SOURCE +'_saved_weights.pt')
+
+        print('\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
+        print('\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}% |  Val. AUC: {valid_auc:.2f}%')
+        print('\t Test. macro-F1: {test_macro_f1:.4f} |  Test. Acc: {test_acc * 100:.4f}% |  Test. AUC: {test_auc:.4f}%')
+    torch.save(model.state_dict(), OUTPUT_DIRECTORY + TRAIN_SOURCE + '/'+ TEST_SOURCE + '_saved_weights_last.pt')
+
 # Check out some of the predictions
-model.eval()
 
-dev_pred_df = defaultdict(list)
+else:
+    model.load_state_dict(torch.load(OUTPUT_DIRECTORY + TRAIN_SOURCE + '/'+TEST_SOURCE+'_saved_weights.pt', map_location=device))
+    model.eval()
+    test_loss, test_acc, test_auc, test_clr = evaluate(model, test_iterator, criterion)
+    print(test_clr)
 
-# deactivates autograd
-# with torch.no_grad():
-model.eval()
-for batch in tqdm(valid_iterator):
+    dev_pred_df = defaultdict(list)
+    model.eval()
+    for batch in tqdm(test_iterator):
 
-    # retrieve text and no. of words
-    text, text_lengths = batch.text
+        # retrieve text and no. of words
+        text, text_lengths = batch.text
 
-    # convert to 1d tensor
-    predictions = model(text, text_lengths).squeeze()
+        true=batch.label.cpu().detach().numpy()
+        # convert to 1d tensor
+        predictions = model(text, text_lengths).squeeze()
 
-    for i, cids in enumerate(text.cpu()):
-        username = ''.join([TEXT.vocab.itos[cid] for cid in cids])
-        pred = predictions[i].cpu().item()
-        dev_pred_df['username'].append(username)
-        dev_pred_df['prediction'].append(pred)
+        for i, cids in enumerate(text.cpu()):
+            username = ''.join([TEXT.vocab.itos[cid] for cid in cids])
+            pred = predictions[i].cpu().item()
+            dev_pred_df['username'].append(username)
+            dev_pred_df['prediction'].append(pred)
+            dev_pred_df['label'].append(true[i])
 
-        # print(text)
-        # break
-dev_pred_df = pd.DataFrame(dev_pred_df)
-dev_pred_df.head()
-# save_path= '/shared/0/projects/reddit-political-affiliation/data/username-labels/user_prediction'
-# dev_pred_df.to_csv(save_path+"train_from_"+TRAIN_SOURCE+"_evaluate_on_"+TEST_SOURCE,sep='\t')
+            # print(text)
+            # break
+    dev_pred_df = pd.DataFrame(dev_pred_df)
+    print(dev_pred_df.head())
+    dev_pred_df.to_csv(OUTPUT_DIRECTORY + TRAIN_SOURCE + '/'+TEST_SOURCE+'_selected.tsv',sep='\t')
+    # save_path= '/shared/0/projects/reddit-political-affiliation/data/username-labels/user_prediction'
+    # dev_pred_df.to_csv(save_path+"train_from_"+TRAIN_SOURCE+"_evaluate_on_"+TEST_SOURCE,sep='\t')
