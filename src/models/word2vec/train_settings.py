@@ -6,7 +6,7 @@ from tensorboardX import SummaryWriter
 
 parser = argparse.ArgumentParser(description='Train User2Subreddit word2vec model')
 parser.add_argument('--network', type=str, help="Location of the bipartite network file between users and subreddits")
-parser.add_argument('--num_epochs', type=int, help="The number of epochs to run", default=15)
+parser.add_argument('--num_epochs', type=int, help="The number of epochs to run", default=10)
 parser.add_argument('--batch_size', type=int, help="The batch size", default=512)
 parser.add_argument('--out', type=str, help="Output directory")
 parser.add_argument('--device', type=str, help="The GPU to run on (e.g., cuda:0)")
@@ -34,12 +34,12 @@ if args.network:
     network_path = args.network
 else:
     # network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/' + year_month + '.tsv'
-    network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/gold/2016_1000subs_10posts.tsv'
+    network_path = '/shared/0/projects/reddit-political-affiliation/data/bipartite-networks/cong_train/'
 
 if args.out:
     out_dir = args.out
 else:
-    out_dir = "/shared/0/projects/reddit-political-affiliation/data/word2vec/" + year_month + "/"
+    out_dir = "/shared/0/projects/reddit-political-affiliation/data/word2vec/"
 
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
@@ -58,4 +58,4 @@ else:
     device = torch.device("cuda:4")
     torch.cuda.set_device(0)
 
-load_from = args.load_from
+load_from = 9
