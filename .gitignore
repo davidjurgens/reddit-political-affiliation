@@ -99,3 +99,9 @@ src/features/bad_actors/bad_actors_flip_counts/plots/wherebadactorspost.png
 src/features/bad_actors/bad_actors_flip_counts/plots/wheresuperbadactorspost.png
 src/features/interactions/Untitled.ipynb
 *.csv
+src/features/bad_actors/status_count.py
+src/features/interactions/best_bert.pt
+src/features/interactions/Interactions.ipynb
+src/features/interactions/Interactions.ipynb
+src/features/interactions/Interactions.ipynb
+*.npy
