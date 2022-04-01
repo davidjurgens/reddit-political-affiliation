@@ -89,3 +89,11 @@ target/
 .mypy_cache/
 
 venv/
+*.tsv
+src/features/bad_actors/bad_actors_flip_counts/plots/bad_actors_partisans_log_odds_30_days.png
+src/features/bad_actors/bad_actors_flip_counts/plots/bad_actors_partisans_log_odds_365_days.png
+src/features/bad_actors/bad_actors_flip_counts/plots/dataset-level-tsne-80-4.png
+src/features/bad_actors/bad_actors_flip_counts/plots/FGSInteractionCoefficient.png
+src/features/bad_actors/bad_actors_flip_counts/plots/politics-level-tsne-80-4.png
+src/features/bad_actors/bad_actors_flip_counts/plots/wherebadactorspost.png
+src/features/bad_actors/bad_actors_flip_counts/plots/wheresuperbadactorspost.png
