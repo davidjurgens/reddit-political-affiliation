@@ -97,3 +97,5 @@ src/features/bad_actors/bad_actors_flip_counts/plots/FGSInteractionCoefficient.p
 src/features/bad_actors/bad_actors_flip_counts/plots/politics-level-tsne-80-4.png
 src/features/bad_actors/bad_actors_flip_counts/plots/wherebadactorspost.png
 src/features/bad_actors/bad_actors_flip_counts/plots/wheresuperbadactorspost.png
+src/features/interactions/Untitled.ipynb
+*.csv
