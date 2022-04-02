@@ -43,7 +43,7 @@ a liberal leaning. To predict affiliation from names, we follow Wang and Jurgens
 
 ## Interactions
 
-**Code** `src/models/interactions`
+**Code** `src/features/interactions`
 
 **Data** `data/all_interaction_comment_ids.tsv`
 
