@@ -2,8 +2,6 @@ Reddit Political Affiliation
 ==============================
 
 
-# Project Structure
-
 ## Political Classification
 _________________
 
@@ -18,9 +16,8 @@ affiliated (e.g., gun-rights or pro-life for conservative users), whereas the te
 
 
 **Code**
-- Dataset:
-- 
-**Data**
+- Dataset: `src/data/word2vec` contains the code to build the bipartite network between users and subreddits
+- Training `src/models/word2vec/train_model.py`
 
 ### Text Classifier
 
@@ -29,9 +26,9 @@ e.g., discussing interests in gun rights. To infer affiliation from such stateme
 from each user, excluding any statements they make that explicitly self-identify their affiliation.
 The model predicts each comment, and we aggregate the model outputs by taking the mean of predictions for selected comments associated with a  user as the final label
 
-**Code**
+**Code** `src/models/textclassifier`
 
-**Data**
+**Data** `data/all_interaction_comment_ids.tsv`
 
 
 ### Username Classifier
@@ -41,13 +38,23 @@ a liberal leaning. To predict affiliation from names, we follow Wang and Jurgens
 
 **Code** `src/models/usernameclassifier`
 
-**Data** `data/usernameclassifier`
+**Data** Flairs used to build the dataset `src/features/political_affiliations/political_labels.py`
+
+
+## Interactions
+
+**Code** `src/models/interactions`
+
+**Data** `data/all_interaction_comment_ids.tsv`
 
 ## Behavioral Analyses
 _________________
 
 ### Bad Actors
 
-### Subreddit Entropy
+**Code** `src/features/bad_actors`
+
 
 ### Predicting Flips
+
+**Code** `src/models/psm`
