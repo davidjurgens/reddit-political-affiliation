@@ -1,57 +1,60 @@
-Reddit Political Affliation 
+Reddit Political Affiliation 
 ==============================
 
-Analyze the political affiliations of Reddit users using their flairs, and subreddits through their networks
 
-Project Organization
-------------
+## Political Classification
+_________________
 
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
+### Behavioral Classifier
+Analogous to training a word2vec model with separate user and subreddit embeddings which learn parameters to maximize if the user participates in the subreddit. We extend this approach to use
+semi-supervised training in a multi-task setup: the traditional user2community model is retained and a separate linear layer is used to predict political affiliation from the user embedding if that user’s affiliation is known. This semi-supervised setup provides
+structure to the user embeddings, ideally infusing all users with information on their affiliation based  on subreddit commenting behavior. Unlike the
+text-based classifier, the behavioral model captures user engagement in politically-affiliated communities, even if the user never explicitly declares their
+affiliation in comments. The primary difference between the behavioral and text classifiers is that the behavioral classifier captures whether a user associates with groups (subreddits) that are politically
+affiliated (e.g., gun-rights or pro-life for conservative users), whereas the text classifier captures whether a user says something that reveals their politics.
 
 
---------
 
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+**Code**
+- Dataset: `src/data/word2vec` contains the code to build the bipartite network between users and subreddits
+- Training `src/models/word2vec/train_model.py`
+
+### Text Classifier
+
+Some topics are politically oriented and can potentially reveal a user’s leaning,
+e.g., discussing interests in gun rights. To infer affiliation from such statements, we train a RoBERTa model over comments made
+from each user, excluding any statements they make that explicitly self-identify their affiliation.
+The model predicts each comment, and we aggregate the model outputs by taking the mean of predictions for selected comments associated with a  user as the final label
+
+**Code** `src/models/textclassifier`
+
+**Data** `data/all_interaction_comment_ids.tsv`
+
+
+### Username Classifier
+
+Usernames can reveal aspects of identity e.g., Hillary4Prez reveals
+a liberal leaning. To predict affiliation from names, we follow Wang and Jurgens (2018) and train a bidirectional character-based LSTM
+
+**Code** `src/models/usernameclassifier`
+
+**Data** Flairs used to build the dataset `src/features/political_affiliations/political_labels.py`
+
+
+## Interactions
+
+**Code** `src/models/interactions`
+
+**Data** `data/all_interaction_comment_ids.tsv`
+
+## Behavioral Analyses
+_________________
+
+### Bad Actors
+
+**Code** `src/features/bad_actors`
+
+
+### Predicting Flips
+
+**Code** `src/models/psm`
