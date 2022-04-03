@@ -43,18 +43,29 @@ a liberal leaning. To predict affiliation from names, we follow Wang and Jurgens
 
 ## Interactions
 
-**Code** `src/features/interactions`
+Here we examine the interactions between political users to probe the mechanisms behind toxicity of comments.
+
+**Code** `src/features/interactions/Interaction Regression.ipynb` contains codes to do regression under R environment, `src/features/interactions/offbert.py` contains codes to train a bert to predict toxicity of comments.
 
 **Data** `data/all_interaction_comment_ids.tsv`
 
 ## Behavioral Analyses
 _________________
+### Participation in Reddit
 
-### Bad Actors
+Here, we test whether the different groups within an affiliation have separate bubbles themselves. 
 
-**Code** `src/features/bad_actors`
+**Code** `src/features/political_affiliations/' have a notebook 'Categorizing Political Users.ipynb' which builds users' commenting frequencies across subreddits and applies PCA to identify latent variations in where users are active. The results are shown by t-sne projection which can be done by `Rendering of t-sne Results.ipynb'
 
+
+### Two-Faced Actors
+
+We identified a small percent of political users who declare different political affiliations within a short period.
+
+**Code** `src/features/bad_actors` contains codes to identify two-faced actors and two demo notebooks to do basic analysis and log-odds analysis. 
 
 ### Predicting Flips
 
-**Code** `src/models/psm`
+ Here, we test whether political affiliation changes can be predicted from prior behavior.
+
+**Code** `src/models/psm` contains codes to predict affiliation changes using logistic regression.
