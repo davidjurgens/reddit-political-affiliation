@@ -31,16 +31,6 @@ def prepare_sentence_features(interactions):  # ,cats,subrredit_to_id):
     interactions['parent_toxicity'] = response_toxic
     # interactions['toxicity'] = Y
 
-
-def if_have_sensitive(username):
-    sensitive_list = ['fuck', 'shit', 'suck', 'bitch', 'ass', 'pussy', 'piss', 'dick']
-    label = 0
-    for sensitive_word in sensitive_list:
-        if sensitive_word in username.lower():
-            label = 1
-    return label
-
-
 def if_have_affiliation(username):
     affiliation_list = ['trump', 'bernie', 'biden', 'democrat', 'republic', 'maga', 'liberal', 'conservative']
     affi = 0
@@ -66,7 +56,6 @@ renamed_data = parent_tox_data.rename(
 
 print(renamed_data)
 
-renamed_data['if_have_sensitive'] = renamed_data['username'].apply(if_have_sensitive)
 renamed_data['if_have_affiliation'] = renamed_data['username'].apply(if_have_affiliation)
 renamed_data['subreddit'] = renamed_data['subreddit'].apply(
     lambda username: username if username in subreddit_to_id else 'UNK')
