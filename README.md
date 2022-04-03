@@ -42,7 +42,7 @@ a liberal leaning. To predict affiliation from names, we follow Wang and Jurgens
 
 
 ## Interactions
-
+_________________
 Here we examine the interactions between political users to probe the mechanisms behind toxicity of comments.
 
 **Code** `src/features/interactions/Interaction Regression.ipynb` contains codes to do regression under R environment, `src/features/interactions/offbert.py` contains codes to train a bert to predict toxicity of comments.
@@ -51,6 +51,7 @@ Here we examine the interactions between political users to probe the mechanisms
 
 ## Behavioral Analyses
 _________________
+
 ### Participation in Reddit
 
 Here, we test whether the different groups within an affiliation have separate bubbles themselves. 
