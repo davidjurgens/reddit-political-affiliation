@@ -55,7 +55,7 @@ _________________
 
 Here, we test whether the different groups within an affiliation have separate bubbles themselves. 
 
-**Code** `src/features/political_affiliations/' have a notebook `Categorizing Political Users.ipynb' which builds users' commenting frequencies across subreddits and applies PCA to identify latent variations in where users are active. The results are shown by t-sne projection which can be done by `Rendering of t-sne Results.ipynb'
+**Code** `src/features/political_affiliations/` have a notebook `Categorizing Political Users.ipynb` which builds users' commenting frequencies across subreddits and applies PCA to identify latent variations in where users are active. The results are shown by t-sne projection which can be done by `Rendering of t-sne Results.ipynb`
 
 
 ### Two-Faced Actors
